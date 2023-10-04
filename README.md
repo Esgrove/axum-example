@@ -1,6 +1,6 @@
 # Axum REST API Template
 
-Simple example for using Axum framework for a REST API.
+Simple example for using the Axum framework for a REST API.
 
 <https://github.com/tokio-rs/axum>
 
