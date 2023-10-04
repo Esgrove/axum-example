@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 axum = "0.6.18"
+axum-macros = "0.3.8"
 chrono = "0.4.26"
 clap = { version = "4.3.0", features = ["derive"] }
 serde = { version = "1.0.163", features = ["derive"] }
