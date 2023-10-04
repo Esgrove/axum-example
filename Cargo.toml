@@ -1,15 +1,18 @@
 [package]
-name = "rust-backend-template"
-version = "0.1.0"
+authors = ["Esgrove <esgrove@outlook.com>"]
+description = "Axum REST API example and template."
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+name = "rust-axum-example"
+readme = "README.md"
+repository = "https://github.com/Esgrove/rust-axum-example"
+version = "0.2.0"
 
 [dependencies]
-anyhow = "1.0.71"
-axum = "0.6.18"
+anyhow = "1.0.75"
+axum = "0.6.20"
 axum-macros = "0.3.8"
-chrono = "0.4.26"
+chrono = "0.4.31"
 clap = { version = "4.3.0", features = ["derive"] }
 serde = { version = "1.0.163", features = ["derive"] }
 tokio = { version = "1.28.2", features = ["full"] }
