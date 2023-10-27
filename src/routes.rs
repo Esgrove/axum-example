@@ -1,3 +1,4 @@
+use crate::build;
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use axum_macros::debug_handler;
 use chrono::Utc;
@@ -22,6 +23,19 @@ pub struct User {
 #[derive(Serialize)]
 pub struct Response {
     message: String,
+}
+
+#[derive(Serialize)]
+pub struct VersionInfo {
+    name: String,
+    version: String,
+    build_time: String,
+    branch: String,
+    commit: String,
+    commit_time: String,
+    os: String,
+    rust_version: String,
+    rust_channel: String,
 }
 
 // basic handler that responds with a static string
@@ -64,6 +78,26 @@ pub async fn query_user(Query(user): Query<UserQuery>) -> impl IntoResponse {
         Json(User {
             id: 1234,
             username: user.username,
+        }),
+    )
+}
+
+#[debug_handler]
+/// Root returns a simple json response with the current date and time
+pub async fn version() -> impl IntoResponse {
+    tracing::info!("Version: {}", build::VERSION);
+    (
+        StatusCode::OK,
+        Json(VersionInfo {
+            name: build::PROJECT_NAME.to_string(),
+            version: build::VERSION.to_string(),
+            build_time: build::BUILD_TIME.to_string(),
+            branch: build::BRANCH.to_string(),
+            commit: build::COMMIT_HASH.to_string(),
+            commit_time: build::COMMIT_DATE.to_string(),
+            os: build::BUILD_OS.to_string(),
+            rust_version: build::RUST_VERSION.to_string(),
+            rust_channel: build::RUST_CHANNEL.to_string(),
         }),
     )
 }
