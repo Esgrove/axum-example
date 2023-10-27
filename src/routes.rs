@@ -85,7 +85,7 @@ pub async fn query_user(Query(user): Query<UserQuery>) -> impl IntoResponse {
 #[debug_handler]
 /// Root returns a simple json response with the current date and time
 pub async fn version() -> impl IntoResponse {
-    tracing::info!("Version: {}", build::VERSION);
+    tracing::info!("Version: {}", build::PKG_VERSION);
     (
         StatusCode::OK,
         Json(VersionInfo {
