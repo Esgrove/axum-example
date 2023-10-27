@@ -33,7 +33,7 @@ pub struct VersionInfo {
     branch: String,
     commit: String,
     commit_time: String,
-    os: String,
+    build_os: String,
     rust_version: String,
     rust_channel: String,
 }
@@ -90,12 +90,12 @@ pub async fn version() -> impl IntoResponse {
         StatusCode::OK,
         Json(VersionInfo {
             name: build::PROJECT_NAME.to_string(),
-            version: build::VERSION.to_string(),
+            version: build::PKG_VERSION.to_string(),
             build_time: build::BUILD_TIME.to_string(),
             branch: build::BRANCH.to_string(),
             commit: build::COMMIT_HASH.to_string(),
             commit_time: build::COMMIT_DATE.to_string(),
-            os: build::BUILD_OS.to_string(),
+            build_os: build::BUILD_OS.to_string(),
             rust_version: build::RUST_VERSION.to_string(),
             rust_channel: build::RUST_CHANNEL.to_string(),
         }),
