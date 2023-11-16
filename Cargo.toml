@@ -1,3 +1,5 @@
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 authors = ["Esgrove <esgrove@outlook.com>"]
 description = "Axum REST API example."
@@ -6,7 +8,7 @@ license = "MIT"
 name = "rust-axum-example"
 readme = "README.md"
 repository = "https://github.com/Esgrove/rust-axum-example"
-version = "0.3.0"
+version = "0.4.0"
 build = "build.rs"
 
 [build-dependencies]
@@ -17,9 +19,15 @@ anyhow = "1.0.75"
 axum = "0.6.20"
 axum-macros = "0.3.8"
 chrono = "0.4.31"
-clap = { version = "4.4.7", features = ["derive"] }
+clap = { version = "4.4.8", features = ["derive"] }
 serde = { version = "1.0.190", features = ["derive"] }
 shadow-rs = "0.24.1"
 tokio = { version = "1.33.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+
+[profile.release]
+lto = true
+incremental = true
+# https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+codegen-units = 1
