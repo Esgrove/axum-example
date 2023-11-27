@@ -1,6 +1,5 @@
 use crate::build;
-use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
-use axum_macros::debug_handler;
+use axum::{extract::Query, http::StatusCode, Json};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
@@ -39,9 +38,9 @@ pub struct VersionInfo {
 }
 
 // basic handler that responds with a static string
-#[debug_handler]
+#[axum::debug_handler]
 /// Root returns a simple json response with the current date and time
-pub async fn root() -> impl IntoResponse {
+pub async fn root() -> (StatusCode, Json<Response>) {
     let datetime = Utc::now().to_rfc2822();
     tracing::info!("Root: {}", datetime);
     (StatusCode::OK, Json(Response { message: datetime }))
@@ -49,13 +48,13 @@ pub async fn root() -> impl IntoResponse {
 
 // debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
-#[debug_handler]
+#[axum::debug_handler]
 /// Example for doing a POST with some data
 pub async fn create_user(
     // this argument tells axum to parse the request body
     // as JSON into a `CreateUser` type
     Json(payload): Json<CreateUser>,
-) -> impl IntoResponse {
+) -> (StatusCode, Json<User>) {
     // insert your application logic here
     let user = User {
         id: 1337,
@@ -68,11 +67,10 @@ pub async fn create_user(
     (StatusCode::CREATED, Json(user))
 }
 
-#[debug_handler]
+#[axum::debug_handler]
 /// Example for using query parameters
-pub async fn query_user(Query(user): Query<UserQuery>) -> impl IntoResponse {
+pub async fn query_user(Query(user): Query<UserQuery>) -> (StatusCode, Json<User>) {
     tracing::info!("Query user: {}", user.username);
-
     (
         StatusCode::OK,
         Json(User {
@@ -82,9 +80,9 @@ pub async fn query_user(Query(user): Query<UserQuery>) -> impl IntoResponse {
     )
 }
 
-#[debug_handler]
+#[axum::debug_handler]
 /// Root returns a simple json response with the current date and time
-pub async fn version() -> impl IntoResponse {
+pub async fn version() -> (StatusCode, Json<VersionInfo>) {
     tracing::info!("Version: {}", build::PKG_VERSION);
     (
         StatusCode::OK,

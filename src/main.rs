@@ -13,7 +13,6 @@ use axum::{
 };
 use clap::{arg, Parser};
 
-use std::net::SocketAddr;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
@@ -109,12 +108,8 @@ async fn main() -> Result<()> {
         .route("/users", post(routes::create_user));
 
     // Run app with Hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], port_number));
-    tracing::info!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
-
+    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port_number)).await?;
+    tracing::info!("listening on {}", listener.local_addr()?);
+    axum::serve(listener, app).await?;
     Ok(())
 }
