@@ -18,6 +18,9 @@ on:
       - "Cargo.lock"
       - "Cargo.toml"
 
+env:
+  CARGO_TERM_COLOR: always
+
 # https://github.com/actions-rs/cargo
 jobs:
   cargo:
@@ -31,15 +34,26 @@ jobs:
         with:
           toolchain: stable
 
-      - name: fmt
-        # workaround for color output
-        env:
-          TERM: xterm-256color
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: format
         run: cargo fmt --check --verbose
 
-      - name: clippy
-        env:
-          TERM: xterm-256color
+      - name: build
+        run: cargo build
+
+      - name: lint
         # exit non-zero if there are any warnings
         # https://doc.rust-lang.org/stable/clippy/usage.html
         run: cargo clippy -- -Dwarnings
