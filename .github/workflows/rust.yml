@@ -49,13 +49,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: format
+      - name: Format
         run: cargo fmt --check --verbose
 
-      - name: build
+      - name: Build
         run: cargo build
 
-      - name: lint
+      - name: Lint
         # exit non-zero if there are any warnings
         # https://doc.rust-lang.org/stable/clippy/usage.html
         run: cargo clippy -- -Dwarnings
