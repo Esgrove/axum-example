@@ -81,7 +81,7 @@ pub async fn query_user(Query(user): Query<UserQuery>) -> (StatusCode, Json<User
 }
 
 #[axum::debug_handler]
-/// Root returns a simple json response with the current date and time
+/// Return version information
 pub async fn version() -> (StatusCode, Json<VersionInfo>) {
     tracing::info!("Version: {}", build::PKG_VERSION);
     (

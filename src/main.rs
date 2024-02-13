@@ -1,10 +1,11 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run
+//! cargo run --release
 //! ```
 
 mod routes;
+mod utils;
 
 use anyhow::Result;
 use axum::{
@@ -12,23 +13,15 @@ use axum::{
     Router,
 };
 use clap::{arg, Parser};
-
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
 use shadow_rs::shadow;
 
-shadow!(build);
+use crate::utils::LogLevel;
 
-/// Logging level
-#[derive(clap::ValueEnum, Clone, Debug)]
-enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    Error,
-}
+// Get build information
+shadow!(build);
 
 /// Command line arguments
 ///
@@ -81,13 +74,7 @@ async fn main() -> Result<()> {
     // Get logging level to use
     let log_level_filter = match args.log {
         None => LevelFilter::INFO,
-        Some(ref level) => match level {
-            LogLevel::Trace => LevelFilter::TRACE,
-            LogLevel::Debug => LevelFilter::DEBUG,
-            LogLevel::Info => LevelFilter::INFO,
-            LogLevel::Warn => LevelFilter::WARN,
-            LogLevel::Error => LevelFilter::ERROR,
-        },
+        Some(ref level) => level.to_filter(),
     };
 
     let filter_layer = match EnvFilter::try_from_default_env() {
@@ -96,9 +83,7 @@ async fn main() -> Result<()> {
     };
 
     // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(filter_layer)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(filter_layer).init();
 
     // Build application with routes
     let app = Router::new()
