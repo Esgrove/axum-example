@@ -6,6 +6,8 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=../common.sh
 source "$DIR/common.sh"
 
+PORT=${PORT:-3000}
+
 get() {
     local url="$1"
     print_magenta "GET: $1"
@@ -34,13 +36,13 @@ print_response() {
     rm response.json
 }
 
-if ! curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" | grep -q '^2'; then
+if ! curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT" | grep -q '^2'; then
     print_error_and_exit "Failed to call API, is it running?"
 fi
 
-get http://127.0.0.1:3000
-get http://127.0.0.1:3000/version
-get http://127.0.0.1:3000/user?username=pizzalover9000
-post http://127.0.0.1:3000/users '{"username":"esgrove"}'
-get http://127.0.0.1:3000/user?username=esgrove
-post http://127.0.0.1:3000/users '{"username":"esgrove"}'
+get "http://127.0.0.1:$PORT"
+get "http://127.0.0.1:$PORT/version"
+get "http://127.0.0.1:$PORT/user?username=pizzalover9000"
+post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'
+get "http://127.0.0.1:$PORT/user?username=esgrove"
+post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'

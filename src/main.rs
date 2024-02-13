@@ -52,6 +52,10 @@ struct Args {
     #[arg(value_enum, short, long, value_name = "LEVEL")]
     log: Option<LogLevel>,
 
+    /// Optional host IP to listen to (for example "0.0.0.0")
+    #[arg(short, long, value_name = "HOST")]
+    host: Option<String>,
+
     /// Custom version flag instead of clap default
     #[arg(short, long, help = "Print version info and exit")]
     version: bool,
@@ -105,8 +109,10 @@ async fn main() -> Result<()> {
         .route("/users", post(routes::create_user))
         .layer(axum::Extension(app_state));
 
+    let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
+
     // Run app with Hyper
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port_number)).await?;
+    let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
     axum::serve(listener, app).await?;
     Ok(())

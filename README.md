@@ -1,8 +1,6 @@
 # Axum REST API Template
 
-Simple example for using the Axum framework for a REST API.
-
-<https://github.com/tokio-rs/axum>
+Basic example for an [Axum](https://github.com/tokio-rs/axum) REST API.
 
 ## Running locally
 
@@ -20,20 +18,27 @@ Options:
   -h, --help         Print help (see more with '--help')
 ```
 
-Start server:
+### Start server
 
 ```shell
-# default
 cargo run --release
 
-# log level arg
+# Specify log level
 cargo run --release -- --log error
 
 # log level from env
 RUST_LOG=debug cargo run --release
 ```
 
-Test routes:
+### Test routes
+
+Start the server first and then in another terminal (tab):
+
+```shell
+./test-routes.sh
+```
+
+Or manually:
 
 ```shell
 curl -s http://127.0.0.1:3000 | jq .
