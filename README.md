@@ -12,13 +12,16 @@ Rust Axum REST API example.
 Usage: axum-example [OPTIONS]
 
 Options:
-  -p, --port <PORT>  Optional port number to use (default is 3000)
+      --host <HOST>  Optional host IP to listen to (for example "0.0.0.0")
   -l, --log <LEVEL>  Log level to use [possible values: trace, debug, info, warn, error]
+  -p, --port <PORT>  Optional port number to use (default is 3000)
   -v, --version      Print version info and exit
   -h, --help         Print help (see more with '--help')
 ```
 
 ### Start server
+
+Run locally:
 
 ```shell
 cargo run --release
@@ -28,6 +31,12 @@ cargo run --release -- --log error
 
 # log level from env
 RUST_LOG=debug cargo run --release
+```
+
+Docker:
+
+```shell
+./run.sh
 ```
 
 ### Test routes

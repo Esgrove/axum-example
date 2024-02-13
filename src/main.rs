@@ -44,17 +44,17 @@ type GlobalState = Arc<RwLock<HashMap<String, User>>>;
     disable_version_flag = true
 )]
 struct Args {
-    /// Optional port number to use (default is 3000)
-    #[arg(short, long, value_name = "PORT")]
-    port: Option<u16>,
+    /// Optional host IP to listen to (for example "0.0.0.0")
+    #[arg(long, value_name = "HOST")]
+    host: Option<String>,
 
     /// Log level to use
     #[arg(value_enum, short, long, value_name = "LEVEL")]
     log: Option<LogLevel>,
 
-    /// Optional host IP to listen to (for example "0.0.0.0")
-    #[arg(short, long, value_name = "HOST")]
-    host: Option<String>,
+    /// Optional port number to use (default is 3000)
+    #[arg(short, long, value_name = "PORT")]
+    port: Option<u16>,
 
     /// Custom version flag instead of clap default
     #[arg(short, long, help = "Print version info and exit")]
