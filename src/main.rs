@@ -37,12 +37,12 @@ shadow!(build);
     disable_version_flag = true
 )]
 struct Args {
-    /// Optional port number to use
-    #[arg(short, long, help = "Port number", value_name = "PORT")]
+    /// Optional port number to use (default is 3000)
+    #[arg(short, long, value_name = "PORT")]
     port: Option<u16>,
 
-    /// Log level
-    #[arg(value_enum, short, long, help = "Log level", value_name = "LEVEL")]
+    /// Log level to use
+    #[arg(value_enum, short, long, value_name = "LEVEL")]
     log: Option<LogLevel>,
 
     /// Custom version flag instead of clap default

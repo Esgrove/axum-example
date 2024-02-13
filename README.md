@@ -6,6 +6,20 @@ Simple example for using the Axum framework for a REST API.
 
 ## Running locally
 
+Usage:
+
+```console
+Rust Axum REST API example.
+
+Usage: axum-example [OPTIONS]
+
+Options:
+  -p, --port <PORT>  Optional port number to use (default is 3000)
+  -l, --log <LEVEL>  Log level to use [possible values: trace, debug, info, warn, error]
+  -v, --version      Print version info and exit
+  -h, --help         Print help (see more with '--help')
+```
+
 Start server:
 
 ```shell
