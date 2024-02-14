@@ -5,6 +5,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::level_filters::LevelFilter;
+use utoipa::ToSchema;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -30,37 +31,37 @@ pub struct AppState {
 }
 
 /// Payload for creating a new user
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct CreateUser {
     pub username: String,
 }
 
 /// Query with username
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct UserQuery {
     pub username: String,
 }
 
-#[derive(Serialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, ToSchema)]
 pub struct User {
     pub id: u64,
     pub username: String,
 }
 
 /// Simple response with a message
-#[derive(Serialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct SimpleResponse {
     pub message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserListResponse {
     pub num_users: usize,
     pub usernames: Vec<String>,
 }
 
 /// API version information
-#[derive(Serialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct VersionInfo {
     pub name: String,
     pub version: String,

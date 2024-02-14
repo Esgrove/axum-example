@@ -11,13 +11,16 @@ mod utils;
 
 use anyhow::Result;
 use axum::routing::{get, post};
-use axum::{Json, Router};
+use axum::Router;
 use clap::{arg, Parser};
 use shadow_rs::shadow;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
+use utoipa_swagger_ui::SwaggerUi;
 
 use std::time::Duration;
 use types::{LogLevel, SharedState};
@@ -57,20 +60,25 @@ struct Args {
 }
 
 #[derive(OpenApi)]
-#[openapi(paths(openapi))]
-struct ApiDoc;
-
-/// Return JSON version of an OpenAPI schema
-#[utoipa::path(
-    get,
-    path = "/api-docs/openapi.json",
-    responses(
-        (status = 200, description = "JSON file", body = ())
-    )
+#[openapi(
+    paths(
+        routes::root,
+        routes::version,
+        routes::query_user,
+        routes::list_users,
+        routes::create_user,
+        routes::openapi,
+    ),
+    components(schemas(
+        types::CreateUser,
+        types::UserQuery,
+        types::User,
+        types::SimpleResponse,
+        types::UserListResponse,
+        types::VersionInfo,
+    ))
 )]
-async fn openapi() -> Json<utoipa::openapi::OpenApi> {
-    Json(ApiDoc::openapi())
-}
+pub struct ApiDoc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -97,12 +105,14 @@ async fn main() -> Result<()> {
 
     // Build application with routes
     let app = Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
+        .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
         .route("/", get(routes::root))
         .route("/version", get(routes::version))
         .route("/user", get(routes::query_user))
         .route("/list_users", get(routes::list_users))
         .route("/users", post(routes::create_user))
-        .route("/api-docs/openapi.json", get(openapi))
         .layer(axum::Extension(shared_state))
         .layer((
             TraceLayer::new_for_http(),
