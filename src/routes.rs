@@ -2,8 +2,8 @@ use axum::response::IntoResponse;
 use axum::{extract::Query, http::StatusCode, Extension, Json};
 use chrono::Utc;
 
-use crate::utils::{CreateUser, SimpleResponse, User, UserQuery, UserResponse, VersionInfo};
-use crate::{build, SharedState};
+use crate::build;
+use crate::types::{CreateUser, SharedState, SimpleResponse, User, UserQuery, UserResponse, VersionInfo};
 
 // Debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -17,7 +17,8 @@ pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
 }
 
 #[axum::debug_handler]
-/// Example for doing a POST with some data
+/// Create new user.
+/// Example for doing a POST with some data.
 pub async fn create_user(
     Extension(state): Extension<SharedState>,
     Json(payload): Json<CreateUser>,
@@ -26,12 +27,12 @@ pub async fn create_user(
     let user = User::new(payload.username);
     state.db.insert(user.username.clone(), user.clone());
     tracing::info!("Create user: {}", user.username);
-    // This will be converted into a JSON response with a status code of `201 Created`.
     (StatusCode::CREATED, Json(user))
 }
 
 #[axum::debug_handler]
-/// Example for using query parameters
+/// Get user info.
+/// Example for using query parameters.
 pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<SharedState>) -> impl IntoResponse {
     tracing::info!("Query user: {}", user.username);
     let state = state.read().await;
@@ -47,6 +48,22 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
             })
         }
     }
+}
+
+#[axum::debug_handler]
+/// List all users
+pub async fn list_users(Extension(state): Extension<SharedState>) -> impl IntoResponse {
+    tracing::debug!("List users");
+    let state = state.read().await;
+    let users = state
+        .db
+        .keys()
+        .map(|key| key.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    tracing::debug!("List users: found {} users", users.len());
+    (StatusCode::OK, Json(users))
 }
 
 #[axum::debug_handler]
