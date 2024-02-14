@@ -42,7 +42,14 @@ fi
 
 get "http://127.0.0.1:$PORT"
 get "http://127.0.0.1:$PORT/version"
-get "http://127.0.0.1:$PORT/user?username=pizzalover9000"
+get "http://127.0.0.1:$PORT/list_users"
 post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'
 get "http://127.0.0.1:$PORT/user?username=esgrove"
 post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'
+get "http://127.0.0.1:$PORT/user?username=pizzalover9000"
+
+for name in pizzalover9000 akseli swanson; do
+    post "http://127.0.0.1:$PORT/users" "{\"username\":\"$name\"}"
+done
+
+get "http://127.0.0.1:$PORT/list_users"

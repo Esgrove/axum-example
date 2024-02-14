@@ -53,6 +53,12 @@ pub struct SimpleResponse {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserListResponse {
+    pub num_users: usize,
+    pub usernames: Vec<String>,
+}
+
 /// API version information
 #[derive(Serialize, Debug, Clone)]
 pub struct VersionInfo {
@@ -70,6 +76,20 @@ pub struct VersionInfo {
 pub enum UserResponse {
     Found(User),
     Error(SimpleResponse),
+}
+
+pub enum CreateUserResponse {
+    Created(User),
+    Error(SimpleResponse),
+}
+
+impl IntoResponse for CreateUserResponse {
+    fn into_response(self) -> Response {
+        match self {
+            CreateUserResponse::Created(user) => (StatusCode::CREATED, Json(user)).into_response(),
+            CreateUserResponse::Error(resp) => (StatusCode::CONFLICT, Json(resp)).into_response(),
+        }
+    }
 }
 
 impl IntoResponse for UserResponse {

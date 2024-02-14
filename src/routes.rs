@@ -3,7 +3,10 @@ use axum::{extract::Query, http::StatusCode, Extension, Json};
 use chrono::Utc;
 
 use crate::build;
-use crate::types::{CreateUser, SharedState, SimpleResponse, User, UserQuery, UserResponse, VersionInfo};
+use crate::types::{
+    CreateUser, CreateUserResponse, SharedState, SimpleResponse, User, UserListResponse, UserQuery, UserResponse,
+    VersionInfo,
+};
 
 // Debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -22,12 +25,18 @@ pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
 pub async fn create_user(
     Extension(state): Extension<SharedState>,
     Json(payload): Json<CreateUser>,
-) -> (StatusCode, Json<User>) {
+) -> impl IntoResponse {
     let mut state = state.write().await;
+    if state.db.get(&payload.username).is_some() {
+        tracing::error!("User already exists: {}", payload.username);
+        return CreateUserResponse::Error(SimpleResponse {
+            message: format!("User already exists: {}", payload.username),
+        });
+    }
     let user = User::new(payload.username);
     state.db.insert(user.username.clone(), user.clone());
     tracing::info!("Create user: {}", user.username);
-    (StatusCode::CREATED, Json(user))
+    CreateUserResponse::Created(user)
 }
 
 #[axum::debug_handler]
@@ -38,7 +47,7 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
     let state = state.read().await;
     match state.db.get(&user.username) {
         Some(existing_user) => {
-            tracing::info!("User {:?}", existing_user);
+            tracing::info!("{:?}", existing_user);
             UserResponse::Found(existing_user.clone())
         }
         None => {
@@ -52,18 +61,14 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
 
 #[axum::debug_handler]
 /// List all users
-pub async fn list_users(Extension(state): Extension<SharedState>) -> impl IntoResponse {
+pub async fn list_users(Extension(state): Extension<SharedState>) -> (StatusCode, Json<UserListResponse>) {
     tracing::debug!("List users");
     let state = state.read().await;
-    let users = state
-        .db
-        .keys()
-        .map(|key| key.to_string())
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    tracing::debug!("List users: found {} users", users.len());
-    (StatusCode::OK, Json(users))
+    let usernames = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
+    let num_users = usernames.len();
+    let response = UserListResponse { num_users, usernames };
+    tracing::debug!("List users: found {num_users} users");
+    (StatusCode::OK, Json(response))
 }
 
 #[axum::debug_handler]
