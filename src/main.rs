@@ -67,7 +67,6 @@ struct Args {
         routes::query_user,
         routes::list_users,
         routes::create_user,
-        routes::openapi,
     ),
     components(schemas(
         types::CreateUser,

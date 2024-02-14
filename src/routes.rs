@@ -1,13 +1,12 @@
 use axum::response::IntoResponse;
 use axum::{extract::Query, http::StatusCode, Extension, Json};
 use chrono::Utc;
-use utoipa::OpenApi;
 
+use crate::build;
 use crate::types::{
     CreateUser, CreateUserResponse, SharedState, SimpleResponse, User, UserListResponse, UserQuery, UserResponse,
     VersionInfo,
 };
-use crate::{build, ApiDoc};
 
 // Debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -113,16 +112,4 @@ pub async fn list_users(Extension(state): Extension<SharedState>) -> (StatusCode
     let response = UserListResponse { num_users, usernames };
     tracing::debug!("List users: found {num_users} users");
     (StatusCode::OK, Json(response))
-}
-
-/// Return JSON version of an OpenAPI schema
-#[utoipa::path(
-    get,
-    path = "/api-docs/openapi.json",
-    responses(
-        (status = 200, description = "JSON file", body = ())
-    )
-)]
-pub async fn openapi() -> Json<utoipa::openapi::OpenApi> {
-    Json(ApiDoc::openapi())
 }
