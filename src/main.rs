@@ -67,19 +67,11 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     if args.version {
-        println!(
-            "{} {} {} {} {} {} {}",
-            build::PROJECT_NAME,
-            build::PKG_VERSION,
-            build::BUILD_TIME,
-            build::BRANCH,
-            build::SHORT_COMMIT,
-            build::BUILD_OS,
-            build::RUST_VERSION,
-        );
+        println!("{}", utils::api_version_info());
         return Ok(());
     }
 
+    let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
     let port_number = args.port.unwrap_or(3000);
 
     // Get logging level to use
@@ -108,8 +100,6 @@ async fn main() -> Result<()> {
         .route("/user", get(routes::query_user))
         .route("/users", post(routes::create_user))
         .layer(axum::Extension(app_state));
-
-    let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
 
     // Run app with Hyper
     let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;

@@ -104,3 +104,16 @@ impl VersionInfo {
         }
     }
 }
+
+pub fn api_version_info() -> String {
+    format!(
+        "{} {} {} {} {} {} {}",
+        build::PROJECT_NAME,
+        build::PKG_VERSION,
+        build::BUILD_TIME,
+        build::BRANCH,
+        build::SHORT_COMMIT,
+        build::BUILD_OS,
+        build::RUST_VERSION,
+    )
+}
