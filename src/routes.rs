@@ -3,7 +3,7 @@ use axum::{extract::Query, http::StatusCode, Extension, Json};
 use chrono::Utc;
 
 use crate::utils::{CreateUser, SimpleResponse, User, UserQuery, UserResponse, VersionInfo};
-use crate::{build, GlobalState};
+use crate::{build, SharedState};
 
 // Debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -19,12 +19,12 @@ pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
 #[axum::debug_handler]
 /// Example for doing a POST with some data
 pub async fn create_user(
-    Extension(state): Extension<GlobalState>,
+    Extension(state): Extension<SharedState>,
     Json(payload): Json<CreateUser>,
 ) -> (StatusCode, Json<User>) {
-    let mut users = state.write().await;
+    let mut state = state.write().await;
     let user = User::new(payload.username);
-    users.insert(user.username.clone(), user.clone());
+    state.db.insert(user.username.clone(), user.clone());
     tracing::info!("Create user: {}", user.username);
     // This will be converted into a JSON response with a status code of `201 Created`.
     (StatusCode::CREATED, Json(user))
@@ -32,10 +32,10 @@ pub async fn create_user(
 
 #[axum::debug_handler]
 /// Example for using query parameters
-pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<GlobalState>) -> impl IntoResponse {
+pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<SharedState>) -> impl IntoResponse {
     tracing::info!("Query user: {}", user.username);
-    let users = state.read().await;
-    match users.get(&user.username) {
+    let state = state.read().await;
+    match state.db.get(&user.username) {
         Some(existing_user) => {
             tracing::info!("User {:?}", existing_user);
             UserResponse::Found(existing_user.clone())

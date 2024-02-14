@@ -3,9 +3,15 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
 use tracing_subscriber::filter::LevelFilter;
 
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use crate::build;
+
+pub type SharedState = Arc<RwLock<AppState>>;
 
 /// Logging level CLI parameter
 #[derive(clap::ValueEnum, Clone, Debug)]
@@ -15,6 +21,11 @@ pub enum LogLevel {
     Info,
     Warn,
     Error,
+}
+
+#[derive(Default)]
+pub struct AppState {
+    pub(crate) db: HashMap<String, User>,
 }
 
 /// Payload for creating a new user

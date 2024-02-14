@@ -13,21 +13,17 @@ use axum::Router;
 use clap::{arg, Parser};
 use shadow_rs::shadow;
 use tokio::signal;
-use tokio::sync::RwLock;
+
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 
-use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::Duration;
 
-use crate::utils::{LogLevel, User};
+use crate::utils::{LogLevel, SharedState};
 
 // Get build information
 shadow!(build);
-
-type GlobalState = Arc<RwLock<HashMap<String, User>>>;
 
 /// Command line arguments
 ///
@@ -78,13 +74,9 @@ async fn main() -> Result<()> {
         filter_layer = filter_layer.add_directive(level.to_filter().into());
     }
 
-    // Initialize tracing
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
 
-    // Initialize your global state
-    let state: GlobalState = Arc::new(RwLock::new(HashMap::new()));
-    // Clone the state to move into the closure
-    let app_state = state.clone();
+    let shared_state = SharedState::default();
 
     // Build application with routes
     let app = Router::new()
@@ -92,7 +84,7 @@ async fn main() -> Result<()> {
         .route("/version", get(routes::version))
         .route("/user", get(routes::query_user))
         .route("/users", post(routes::create_user))
-        .layer(axum::Extension(app_state))
+        .layer(axum::Extension(shared_state))
         .layer((
             TraceLayer::new_for_http(),
             // Graceful shutdown will wait for outstanding requests to complete.
@@ -106,6 +98,7 @@ async fn main() -> Result<()> {
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
+
     Ok(())
 }
 
