@@ -1,11 +1,8 @@
 # https://hub.docker.com/_/rust
 FROM rust:latest as builder
-RUN USER=root cargo new --bin axum-example
 WORKDIR /axum-example
-
-COPY ./Cargo.toml ./Cargo.lock ./build.rs ./
-COPY ./src ./src
-RUN cargo install --path .
+COPY ./ ./
+RUN cargo build --release && cargo install --path .
 
 # TODO: use smaller (debian) image with a compatible glibc version
 FROM rust:slim as axum-runtime

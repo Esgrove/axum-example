@@ -1,0 +1,6 @@
+# Docker will not copy these files to the container
+# https://docs.docker.com/build/building/context/#dockerignore-files
+.cargo
+.idea
+.vscode
+/target
