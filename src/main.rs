@@ -91,6 +91,7 @@ async fn main() -> Result<()> {
     }
 
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
+    tracing::info!("{}", utils::api_version_info());
 
     let shared_state = SharedState::default();
 
