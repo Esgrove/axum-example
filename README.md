@@ -59,3 +59,11 @@ curl -s http://127.0.0.1:3000/user?username=pizzalover9000 | jq .
 
 curl -s -H "Content-Type: application/json" -d '{"username":"test"}' http://127.0.0.1:3000/users | jq .
 ```
+
+### OpenAPI documentation
+
+Uses [utoipa](https://github.com/juhaku/utoipa) to generate OpenAPI documentation and UIs.
+
+Swagger UI is available at `/doc`, Redoc at `/redoc`, and RapiDoc at `/rapidoc`.
+
+The raw JSON can be seen from `/api-docs/openapi.json`.
