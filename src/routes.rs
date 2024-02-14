@@ -17,7 +17,7 @@ use crate::types::{
     get,
     path = "/root",
     responses(
-        (status = 200, body = [SimpleResponse])
+        (status = 200, body = [SimpleResponse], description = "Show current date and time")
     )
 )]
 pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
@@ -26,7 +26,7 @@ pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
     (StatusCode::OK, Json(SimpleResponse { message: datetime }))
 }
 
-/// Return version information
+/// Return version information for API
 #[axum::debug_handler]
 #[utoipa::path(
     get,
@@ -46,9 +46,10 @@ pub async fn version() -> (StatusCode, Json<VersionInfo>) {
 #[utoipa::path(
     get,
     path = "/user",
+    params(UserQuery),
     responses(
-        (status = 200, description = "List matching todos by query", body = [User]),
-        (status = 400, description = "List matching todos by query", body = [SimpleResponse])
+        (status = 200, description = "Found existing user", body = [User]),
+        (status = 400, description = "User does not exist", body = [SimpleResponse])
     )
 )]
 pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<SharedState>) -> impl IntoResponse {
@@ -75,7 +76,8 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
     path = "/users",
     request_body = CreateUser,
     responses(
-        (status = 201, description = "List matching todos by query", body = [User])
+        (status = CREATED, body = [User], description = "New user created"),
+        (status = CONFLICT, body = [SimpleResponse], description = "User already exists")
     )
 )]
 pub async fn create_user(
@@ -101,7 +103,7 @@ pub async fn create_user(
     get,
     path = "/list_users",
     responses(
-        (status = 200, description = "List matching todos by query", body = [UserListResponse])
+        (status = 200, body = [UserListResponse])
     )
 )]
 pub async fn list_users(Extension(state): Extension<SharedState>) -> (StatusCode, Json<UserListResponse>) {

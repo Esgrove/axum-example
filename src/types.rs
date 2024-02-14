@@ -5,7 +5,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::level_filters::LevelFilter;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -30,47 +30,67 @@ pub struct AppState {
     pub db: HashMap<String, User>,
 }
 
-/// Payload for creating a new user
+/// Post payload for creating a new user
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct CreateUser {
+    #[schema(example = "esgrove")]
     pub username: String,
 }
 
-/// Query with username
-#[derive(Debug, Clone, Deserialize, ToSchema)]
+/// Query user information with username
+#[derive(Debug, Clone, Deserialize, ToSchema, IntoParams)]
 pub struct UserQuery {
+    #[schema(example = "esgrove")]
     pub username: String,
 }
 
+/// User information
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, ToSchema)]
 pub struct User {
+    /// `id` will be in range 1000..9999
+    #[schema(example = "1234")]
     pub id: u64,
+    #[schema(example = "esgrove")]
     pub username: String,
 }
 
 /// Simple response with a message
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct SimpleResponse {
+    /// Message can be either information or an error message
+    #[schema(example = "User already exists: esgrove")]
     pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserListResponse {
+    /// The total number of users
+    #[schema(example = "5")]
     pub num_users: usize,
+    /// List of all usernames
     pub usernames: Vec<String>,
 }
 
-/// API version information
+/// API version information.
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct VersionInfo {
+    #[schema(example = "axum-example")]
     pub name: String,
+    #[schema(example = "0.5.0")]
     pub version: String,
+    #[schema(example = "2024-02-14 14:42:35 +02:00")]
     pub build_time: String,
+    #[schema(example = "main")]
     pub branch: String,
+    #[schema(example = "ee9ec805f61944653a56a7e429b2fad03232be49")]
     pub commit: String,
+    #[schema(example = "2024-02-14 12:42:18 +00:00")]
     pub commit_time: String,
+    #[schema(example = "macos-aarch64")]
     pub build_os: String,
+    #[schema(example = "rustc 1.76.0 (07dca489a 2024-02-04)")]
     pub rust_version: String,
+    #[schema(example = "stable-aarch64-apple-darwin")]
     pub rust_channel: String,
 }
 

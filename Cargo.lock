@@ -178,6 +178,7 @@ dependencies = [
  "clap",
  "rand",
  "serde",
+ "serde_json",
  "shadow-rs",
  "tokio",
  "tower",

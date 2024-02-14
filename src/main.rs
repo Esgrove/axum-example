@@ -23,6 +23,7 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use std::time::Duration;
+
 use types::{LogLevel, SharedState};
 
 // Get build information
@@ -98,7 +99,7 @@ async fn main() -> Result<()> {
     }
 
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
-    tracing::info!("{}", utils::api_version_info());
+    tracing::info!("{}", build::VERSION);
 
     let shared_state = SharedState::default();
 
