@@ -8,24 +8,19 @@ mod routes;
 mod utils;
 
 use anyhow::Result;
-use axum::{
-    routing::{get, post},
-    Router,
-};
-
+use axum::routing::{get, post};
+use axum::Router;
 use clap::{arg, Parser};
+use shadow_rs::shadow;
 use tokio::signal;
 use tokio::sync::RwLock;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
-
 use tracing_subscriber::EnvFilter;
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-
-use shadow_rs::shadow;
 
 use crate::utils::{LogLevel, User};
 
