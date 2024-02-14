@@ -74,15 +74,12 @@ async fn main() -> Result<()> {
     let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
     let port_number = args.port.unwrap_or(3000);
 
-    // Get logging level to use
-    let log_level_filter = match args.log {
-        None => LevelFilter::INFO,
-        Some(ref level) => level.to_filter(),
-    };
-
-    let filter_layer = match EnvFilter::try_from_default_env() {
-        Ok(level) => level,
-        Err(_) => EnvFilter::from_default_env().add_directive(log_level_filter.into()),
+    // Attempt to create the filter layer from the CLI argument if provided,
+    // otherwise try to use the environment variable, defaulting to INFO level if neither is provided.
+    let filter_layer = match args.log {
+        Some(ref level) => EnvFilter::from_default_env().add_directive(level.to_filter().into()),
+        None => EnvFilter::try_from_default_env()
+            .unwrap_or(EnvFilter::from_default_env().add_directive(LevelFilter::INFO.into())),
     };
 
     // Initialize tracing
