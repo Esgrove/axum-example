@@ -14,12 +14,16 @@ use axum::{
 };
 
 use clap::{arg, Parser};
+use tokio::signal;
 use tokio::sync::RwLock;
-use tracing_subscriber::filter::LevelFilter;
+use tower_http::timeout::TimeoutLayer;
+use tower_http::trace::TraceLayer;
+
 use tracing_subscriber::EnvFilter;
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use shadow_rs::shadow;
 
@@ -74,13 +78,10 @@ async fn main() -> Result<()> {
     let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
     let port_number = args.port.unwrap_or(3000);
 
-    // Attempt to create the filter layer from the CLI argument if provided,
-    // otherwise try to use the environment variable, defaulting to INFO level if neither is provided.
-    let filter_layer = match args.log {
-        Some(ref level) => EnvFilter::from_default_env().add_directive(level.to_filter().into()),
-        None => EnvFilter::try_from_default_env()
-            .unwrap_or(EnvFilter::from_default_env().add_directive(LevelFilter::INFO.into())),
-    };
+    let mut filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    if let Some(ref level) = args.log {
+        filter_layer = filter_layer.add_directive(level.to_filter().into());
+    }
 
     // Initialize tracing
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
@@ -96,11 +97,41 @@ async fn main() -> Result<()> {
         .route("/version", get(routes::version))
         .route("/user", get(routes::query_user))
         .route("/users", post(routes::create_user))
-        .layer(axum::Extension(app_state));
+        .layer(axum::Extension(app_state))
+        .layer((
+            TraceLayer::new_for_http(),
+            // Graceful shutdown will wait for outstanding requests to complete.
+            // Add a timeout so requests don't hang forever.
+            TimeoutLayer::new(Duration::from_secs(10)),
+        ));
 
     // Run app with Hyper
     let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
     Ok(())
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
