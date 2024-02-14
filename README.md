@@ -1,6 +1,6 @@
-# Axum REST API Template
+# Axum REST API example
 
-Basic example for an [Axum](https://github.com/tokio-rs/axum) REST API.
+Basic example and learning exercise for an [Axum](https://github.com/tokio-rs/axum) REST API.
 
 ## Running locally
 
