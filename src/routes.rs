@@ -11,7 +11,7 @@ use crate::types::{
 // Debug handler macro generates better error messages in Rust compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
 
-/// Root returns a simple json response with the current date and time
+/// Root returns a simple json response with the current date and time.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
@@ -26,13 +26,13 @@ pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
     (StatusCode::OK, Json(SimpleResponse { message: datetime }))
 }
 
-/// Return version information for API
+/// Return version information for API.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
     path = "/version",
     responses(
-        (status = 200, body = [VersionInfo])
+        (status = 200, body = [VersionInfo], description = "Version information")
     )
 )]
 pub async fn version() -> (StatusCode, Json<VersionInfo>) {
@@ -70,6 +70,7 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
 }
 
 /// Create new user.
+/// Example for doing post with data.
 #[axum::debug_handler]
 #[utoipa::path(
     post,
@@ -87,9 +88,10 @@ pub async fn create_user(
     let mut state = state.write().await;
     if state.db.get(&payload.username).is_some() {
         tracing::error!("User already exists: {}", payload.username);
-        return CreateUserResponse::Error(SimpleResponse {
-            message: format!("User already exists: {}", payload.username),
-        });
+        return CreateUserResponse::Error(SimpleResponse::new(format!(
+            "User already exists: {}",
+            payload.username
+        )));
     }
     let user = User::new(payload.username);
     state.db.insert(user.username.clone(), user.clone());

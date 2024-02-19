@@ -122,6 +122,12 @@ impl IntoResponse for UserResponse {
     }
 }
 
+impl SimpleResponse {
+    pub fn new(message: String) -> SimpleResponse {
+        SimpleResponse { message }
+    }
+}
+
 impl User {
     pub fn new(username: String) -> User {
         let mut rng = rand::thread_rng();
