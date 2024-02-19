@@ -56,7 +56,7 @@ pub struct User {
 
 /// Simple response with a message
 #[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct SimpleResponse {
+pub struct MessageResponse {
     /// Message can be either information or an error message
     #[schema(example = "User already exists: esgrove")]
     pub message: String,
@@ -96,12 +96,12 @@ pub struct VersionInfo {
 
 pub enum UserResponse {
     Found(User),
-    Error(SimpleResponse),
+    Error(MessageResponse),
 }
 
 pub enum CreateUserResponse {
     Created(User),
-    Error(SimpleResponse),
+    Error(MessageResponse),
 }
 
 impl IntoResponse for CreateUserResponse {
@@ -122,9 +122,9 @@ impl IntoResponse for UserResponse {
     }
 }
 
-impl SimpleResponse {
-    pub fn new(message: String) -> SimpleResponse {
-        SimpleResponse { message }
+impl MessageResponse {
+    pub fn new(message: String) -> MessageResponse {
+        MessageResponse { message }
     }
 }
 

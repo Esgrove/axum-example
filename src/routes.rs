@@ -4,11 +4,11 @@ use chrono::Utc;
 
 use crate::build;
 use crate::types::{
-    CreateUser, CreateUserResponse, SharedState, SimpleResponse, User, UserListResponse, UserQuery, UserResponse,
+    CreateUser, CreateUserResponse, MessageResponse, SharedState, User, UserListResponse, UserQuery, UserResponse,
     VersionInfo,
 };
 
-// Debug handler macro generates better error messages in Rust compile
+// Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
 
 /// Root returns a simple json response with the current date and time.
@@ -20,10 +20,10 @@ use crate::types::{
         (status = 200, body = [SimpleResponse], description = "Show current date and time")
     )
 )]
-pub async fn root() -> (StatusCode, Json<SimpleResponse>) {
+pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     let datetime = Utc::now().to_rfc2822();
     tracing::info!("Root: {}", datetime);
-    (StatusCode::OK, Json(SimpleResponse { message: datetime }))
+    (StatusCode::OK, Json(MessageResponse { message: datetime }))
 }
 
 /// Return version information for API.
@@ -62,7 +62,7 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
         }
         None => {
             tracing::error!("User not found: {}", user.username);
-            UserResponse::Error(SimpleResponse {
+            UserResponse::Error(MessageResponse {
                 message: format!("User does not exist: {}", user.username),
             })
         }
@@ -88,7 +88,7 @@ pub async fn create_user(
     let mut state = state.write().await;
     if state.db.get(&payload.username).is_some() {
         tracing::error!("User already exists: {}", payload.username);
-        return CreateUserResponse::Error(SimpleResponse::new(format!(
+        return CreateUserResponse::Error(MessageResponse::new(format!(
             "User already exists: {}",
             payload.username
         )));

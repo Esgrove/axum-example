@@ -71,10 +71,10 @@ struct Args {
     ),
     components(schemas(
         types::CreateUser,
-        types::UserQuery,
+        types::MessageResponse,
         types::User,
-        types::SimpleResponse,
         types::UserListResponse,
+        types::UserQuery,
         types::VersionInfo,
     ))
 )]
@@ -84,7 +84,6 @@ pub struct ApiDoc;
 async fn main() -> Result<()> {
     // Parse command line arguments
     let args = Args::parse();
-
     if args.version {
         println!("{}", utils::api_version_info());
         return Ok(());
@@ -101,9 +100,11 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
     tracing::info!("{}", build::VERSION);
 
-    let shared_state = SharedState::default();
+    let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;
+    tracing::info!("listening on {}", listener.local_addr()?);
 
     // Build application with routes
+    let shared_state = SharedState::default();
     let app = Router::new()
         .merge(SwaggerUi::new("/doc").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
@@ -122,8 +123,6 @@ async fn main() -> Result<()> {
         ));
 
     // Run app with Hyper
-    let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;
-    tracing::info!("listening on {}", listener.local_addr()?);
     axum::serve(listener, app)
         .with_graceful_shutdown(utils::shutdown_signal())
         .await?;
