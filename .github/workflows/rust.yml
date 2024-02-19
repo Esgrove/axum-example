@@ -6,19 +6,21 @@ on:
       - master
       - main
     paths:
+      - ".github/workflows/rust.yml"
       - "**.rs"
       - "Cargo.lock"
       - "Cargo.toml"
-      - ".github/workflows/rust.yml"
   pull_request:
-    branches:
-      - master
-      - main
     paths:
+      - ".github/workflows/rust.yml"
       - "**.rs"
       - "Cargo.lock"
       - "Cargo.toml"
-      - ".github/workflows/rust.yml"
+
+# Cancel previous runs for PRs but not pushes to main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
