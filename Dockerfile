@@ -16,8 +16,11 @@ RUN touch src/main.rs
 RUN cargo install --path .
 
 FROM ubuntu:jammy as axum-runtime
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/axum-example /usr/local/bin/axum-example
 CMD ["axum-example", "--host", "0.0.0.0", "--port", "80"]
 
 HEALTHCHECK --interval=1m --timeout=3s \
-    CMD curl -f http://localhost/ || exit 1
+    CMD curl -fs http://localhost/ || exit 1
