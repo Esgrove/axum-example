@@ -6,6 +6,30 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=../common.sh
 source "$DIR/common.sh"
 
+USAGE="Usage: $0 [OPTIONS]
+
+Test API routes.
+Port number can be set with env variable: PORT=3000 $0
+
+OPTIONS: All options are optional
+    -h | --help
+        Display these instructions.
+
+    -v | --verbose
+        Display commands being executed."
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h | --help)
+            print_usage_and_exit
+            ;;
+        -v | --verbose)
+            set -x
+            ;;
+    esac
+    shift
+done
+
 PORT=${PORT:-3000}
 
 get() {
@@ -32,7 +56,13 @@ print_response() {
     else
         echo "Status code: $response"
     fi
-    jq < response.json
+    output=$(jq --color-output < response.json)
+    if [ "$(echo "$output" | wc -l)" -gt 1 ]; then
+        echo "Response:"
+        echo "$output"
+    else
+        echo "Response: $output"
+    fi
     rm response.json
 }
 
