@@ -27,7 +27,7 @@ pub fn admin_routes() -> Router<SharedState> {
 async fn delete_all_users(State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
     let number_of_users = state.db.len();
-    tracing::info!("Delete all users: {}", number_of_users);
+    tracing::info!("Delete all {number_of_users} users");
     state.db.clear();
     (
         StatusCode::OK,
@@ -53,7 +53,7 @@ async fn remove_user(Path(username): Path<String>, State(state): State<SharedSta
             RemoveUserResponse::Removed(existing_user.clone())
         }
         None => {
-            tracing::error!("Remove user for non-existing username: {}", username);
+            tracing::error!("Remove user failed for non-existing username: {}", username);
             RemoveUserResponse::new_error(format!("User does not exist: {}", username))
         }
     }
