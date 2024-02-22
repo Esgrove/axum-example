@@ -17,7 +17,7 @@ use crate::types::{
     get,
     path = "/root",
     responses(
-        (status = 200, body = [SimpleResponse], description = "Show current date and time")
+        (status = 200, body = [MessageResponse], description = "Show current date and time")
     )
 )]
 pub async fn root() -> (StatusCode, Json<MessageResponse>) {
@@ -49,7 +49,7 @@ pub async fn version() -> (StatusCode, Json<VersionInfo>) {
     params(UserQuery),
     responses(
         (status = 200, description = "Found existing user", body = [User]),
-        (status = 400, description = "User does not exist", body = [SimpleResponse])
+        (status = 400, description = "User does not exist", body = [MessageResponse])
     )
 )]
 pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<SharedState>) -> impl IntoResponse {
@@ -78,7 +78,7 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
     request_body = CreateUser,
     responses(
         (status = CREATED, body = [User], description = "New user created"),
-        (status = CONFLICT, body = [SimpleResponse], description = "User already exists")
+        (status = CONFLICT, body = [MessageResponse], description = "User already exists")
     )
 )]
 pub async fn create_user(
