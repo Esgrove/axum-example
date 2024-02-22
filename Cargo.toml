@@ -2,7 +2,7 @@
 
 [package]
 name = "axum-example"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2021"
 description = "Rust Axum REST API example."
 authors = ["Esgrove <esgrove@outlook.com>"]
@@ -19,9 +19,10 @@ anyhow = "1.0.80"
 axum = { version = "0.7.4", features = ["macros"] }
 chrono = "0.4.34"
 clap = { version = "4.5.1", features = ["derive"] }
+http-body-util = "0.1.0"
 rand = "0.8.5"
-serde = { version = "1.0.196", features = ["derive"] }
-serde_json = "1.0.113"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
 shadow-rs = "0.26.1"
 tokio = { version = "1.36.0", features = ["macros", "full"] }
 tower = { version = "0.4.13", features = ["util"] }

@@ -22,9 +22,12 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::RwLock;
 
 use types::{LogLevel, SharedState};
+use crate::types::AppState;
 
 // Get build information
 shadow!(build);
@@ -105,7 +108,19 @@ async fn main() -> Result<()> {
 
     // Build application with routes
     let shared_state = SharedState::default();
-    let app = Router::new()
+    let app = build_router(&shared_state);
+
+    // Run app with Hyper
+    axum::serve(listener, app)
+        .with_graceful_shutdown(utils::shutdown_signal())
+        .await?;
+
+    Ok(())
+}
+
+/// Create Router app with routes
+fn build_router(shared_state: &Arc<RwLock<AppState>>) -> Router {
+    Router::new()
         .merge(SwaggerUi::new("/doc").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
@@ -114,18 +129,44 @@ async fn main() -> Result<()> {
         .route("/user", get(routes::query_user))
         .route("/list_users", get(routes::list_users))
         .route("/users", post(routes::create_user))
-        .layer(axum::Extension(shared_state))
+        // Put admin routes under /admin
+        .nest("/admin", admin::admin_routes())
         .layer((
             TraceLayer::new_for_http(),
             // Graceful shutdown will wait for outstanding requests to complete.
             // Add a timeout so requests don't hang forever.
             TimeoutLayer::new(Duration::from_secs(10)),
-        ));
+        ))
+        .with_state(Arc::clone(&shared_state))
+}
 
-    // Run app with Hyper
-    axum::serve(listener, app)
-        .with_graceful_shutdown(utils::shutdown_signal())
-        .await?;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use http_body_util::BodyExt;
+    use serde_json::{Value};
+    use tower::{ServiceExt};
 
-    Ok(())
+    #[tokio::test]
+    async fn test_root() {
+        let shared_state = SharedState::default();
+        let app = build_router(&shared_state);
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body: Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(body.get("message").is_some(), "Body does not contain 'message' key");
+        assert!(body["message"].is_string(), "'message' is not a string");
+    }
 }
