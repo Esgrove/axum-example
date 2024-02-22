@@ -109,6 +109,32 @@ pub enum RemoveUserResponse {
     Error(MessageResponse),
 }
 
+/// Custom error type that enables using anyhow error handling in routes.
+struct AppError(anyhow::Error);
+
+// Tell axum how to convert `AppError` into a response.
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {}", self.0),
+        )
+            .into_response()
+    }
+}
+
+// This enables using `?` on functions that return `Result<_, anyhow::Error>`
+// to turn them into `Result<_, AppError>`.
+// This way we don't need to do that manually.
+impl<E> From<E> for AppError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
+}
+
 impl RemoveUserResponse {
     // Accept any type that implements std::fmt::Display, not just strings.
     pub fn new_error<T: std::fmt::Display>(message: T) -> Self {
