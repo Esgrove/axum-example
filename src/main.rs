@@ -70,6 +70,8 @@ struct Args {
         routes::query_user,
         routes::list_users,
         routes::create_user,
+        admin::delete_all_users,
+        admin::remove_user,
     ),
     components(schemas(
         types::CreateUser,

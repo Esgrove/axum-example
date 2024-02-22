@@ -1,24 +1,53 @@
-use crate::types::SharedState;
+use crate::types::{MessageResponse, RemoveUserResponse, SharedState};
 
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::{
     extract::{Path, State},
     routing::delete,
-    Router,
+    Json, Router,
 };
 
-/// Create admin routes
+/// Create admin routes.
 pub fn admin_routes() -> Router<SharedState> {
     Router::new()
         .route("/clear_users", delete(delete_all_users))
-        .route("/remove/:key", delete(remove_user))
+        .route("/remove/:username", delete(remove_user))
 }
 
-async fn delete_all_users(State(state): State<SharedState>) {
+/// Remove all users.
+#[axum::debug_handler]
+#[utoipa::path(
+get,
+path = "/admin/clear_users",
+responses(
+(status = 200, body = [MessageResponse], description = "Report number of users deleted")
+)
+)]
+async fn delete_all_users(State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
+    let number_of_users = state.db.len();
     state.db.clear();
+    (
+        StatusCode::OK,
+        Json(MessageResponse::new(format!("Removed {number_of_users} users"))),
+    )
 }
 
-async fn remove_user(Path(key): Path<String>, State(state): State<SharedState>) {
+/// Try to remove user with given username.
+#[axum::debug_handler]
+#[utoipa::path(
+get,
+path = "/admin/remove/:username",
+responses(
+(status = OK, body = [User], description = "User removed"),
+(status = NOT_FOUND, body = [MessageResponse], description = "User does not exist")
+)
+)]
+async fn remove_user(Path(username): Path<String>, State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
-    state.db.remove(&key);
+    match state.db.remove(&username) {
+        Some(existing_user) => RemoveUserResponse::Removed(existing_user.clone()),
+        None => RemoveUserResponse::new_error(format!("User does not exist: {}", username)),
+    }
 }

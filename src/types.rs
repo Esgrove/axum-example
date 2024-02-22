@@ -104,11 +104,23 @@ pub enum CreateUserResponse {
     Error(MessageResponse),
 }
 
+pub enum RemoveUserResponse {
+    Removed(User),
+    Error(MessageResponse),
+}
+
+impl RemoveUserResponse {
+    // Accept any type that implements std::fmt::Display, not just strings.
+    pub fn new_error<T: std::fmt::Display>(message: T) -> Self {
+        RemoveUserResponse::Error(MessageResponse::new(format!("{}", message)))
+    }
+}
+
 impl IntoResponse for CreateUserResponse {
     fn into_response(self) -> Response {
         match self {
             CreateUserResponse::Created(user) => (StatusCode::CREATED, Json(user)).into_response(),
-            CreateUserResponse::Error(resp) => (StatusCode::CONFLICT, Json(resp)).into_response(),
+            CreateUserResponse::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
         }
     }
 }
@@ -117,7 +129,16 @@ impl IntoResponse for UserResponse {
     fn into_response(self) -> Response {
         match self {
             UserResponse::Found(user) => (StatusCode::OK, Json(user)).into_response(),
-            UserResponse::Error(resp) => (StatusCode::NOT_FOUND, Json(resp)).into_response(),
+            UserResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
+        }
+    }
+}
+
+impl IntoResponse for RemoveUserResponse {
+    fn into_response(self) -> Response {
+        match self {
+            RemoveUserResponse::Removed(user) => (StatusCode::OK, Json(user)).into_response(),
+            RemoveUserResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
         }
     }
 }
