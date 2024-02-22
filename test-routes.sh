@@ -42,14 +42,14 @@ get() {
 post() {
     local url="$1"
     local data="$2"
-    print_magenta "POST: $1 $2"
+    print_cyan "POST: $1 $2"
     response=$(curl -s -X POST -H "Content-Type: application/json" -d "$data" -w "%{http_code}" -o response.json "$url")
     print_response "$response"
 }
 
 delete() {
     local url="$1"
-    print_magenta "DELETE: $1"
+    print_red "DELETE: $1"
     response=$(curl -s -X DELETE -w "%{http_code}" -o response.json "$url")
     print_response "$response"
 }

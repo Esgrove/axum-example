@@ -21,6 +21,12 @@ case "$(uname -s)" in
 esac
 export BASH_PLATFORM
 
+# Print a message in bold
+print_bold() {
+    printf "\e[1;49;37m%s\e[0m\n" "$1"
+}
+
+# Format text with green color
 green() {
     printf "\e[1;49;32m%s\e[0m" "$1"
 }
@@ -30,11 +36,17 @@ print_green() {
     printf "\e[1;49;32m%s\e[0m\n" "$1"
 }
 
+# Print a message with cyan color
+print_cyan() {
+    printf "\e[1;49;36m%s\e[0m\n" "$1"
+}
+
 # Print a message with magenta color
 print_magenta() {
     printf "\e[1;49;35m%s\e[0m\n" "$1"
 }
 
+# Format text with red color
 red() {
     printf "\e[1;49;31m%s\e[0m" "$1"
 }
