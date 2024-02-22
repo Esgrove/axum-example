@@ -18,15 +18,16 @@ pub fn admin_routes() -> Router<SharedState> {
 /// Remove all users.
 #[axum::debug_handler]
 #[utoipa::path(
-get,
-path = "/admin/clear_users",
-responses(
-(status = 200, body = [MessageResponse], description = "Report number of users deleted")
-)
+    delete,
+    path = "/admin/clear_users",
+    responses(
+    (status = 200, body = [MessageResponse], description = "Report number of users deleted")
+    )
 )]
 async fn delete_all_users(State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
     let number_of_users = state.db.len();
+    tracing::info!("Delete all users: {}", number_of_users);
     state.db.clear();
     (
         StatusCode::OK,
@@ -37,17 +38,23 @@ async fn delete_all_users(State(state): State<SharedState>) -> impl IntoResponse
 /// Try to remove user with given username.
 #[axum::debug_handler]
 #[utoipa::path(
-get,
-path = "/admin/remove/:username",
-responses(
-(status = OK, body = [User], description = "User removed"),
-(status = NOT_FOUND, body = [MessageResponse], description = "User does not exist")
-)
+    delete,
+    path = "/admin/remove/:username",
+    responses(
+    (status = OK, body = [User], description = "User removed"),
+    (status = NOT_FOUND, body = [MessageResponse], description = "User does not exist")
+    )
 )]
 async fn remove_user(Path(username): Path<String>, State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
     match state.db.remove(&username) {
-        Some(existing_user) => RemoveUserResponse::Removed(existing_user.clone()),
-        None => RemoveUserResponse::new_error(format!("User does not exist: {}", username)),
+        Some(existing_user) => {
+            tracing::info!("Remove user: {}", username);
+            RemoveUserResponse::Removed(existing_user.clone())
+        }
+        None => {
+            tracing::error!("Remove user for non-existing username: {}", username);
+            RemoveUserResponse::new_error(format!("User does not exist: {}", username))
+        }
     }
 }
