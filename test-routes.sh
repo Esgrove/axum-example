@@ -43,7 +43,14 @@ post() {
     local url="$1"
     local data="$2"
     print_magenta "POST: $1 $2"
-    response=$(curl -s -H "Content-Type: application/json" -d "$data" -w "%{http_code}" -o response.json "$url")
+    response=$(curl -s -X POST -H "Content-Type: application/json" -d "$data" -w "%{http_code}" -o response.json "$url")
+    print_response "$response"
+}
+
+delete() {
+    local url="$1"
+    print_magenta "DELETE: $1"
+    response=$(curl -s -X DELETE -w "%{http_code}" -o response.json "$url")
     print_response "$response"
 }
 
@@ -81,5 +88,17 @@ get "http://127.0.0.1:$PORT/user?username=pizzalover9000"
 for name in pizzalover9000 akseli swanson; do
     post "http://127.0.0.1:$PORT/users" "{\"username\":\"$name\"}"
 done
+
+get "http://127.0.0.1:$PORT/list_users"
+
+# Trying to use GET with admin routes results in 405 "Method Not Allowed"
+get "http://127.0.0.1:$PORT/admin/remove/pizzalover"
+
+delete "http://127.0.0.1:$PORT/admin/remove/pizzalover"
+delete "http://127.0.0.1:$PORT/admin/remove/pizzalover9000"
+
+get "http://127.0.0.1:$PORT/list_users"
+
+delete "http://127.0.0.1:$PORT/admin/clear_users"
 
 get "http://127.0.0.1:$PORT/list_users"
