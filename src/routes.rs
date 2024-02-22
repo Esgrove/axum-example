@@ -4,8 +4,10 @@ use crate::types::{
     VersionInfo,
 };
 
+use axum::extract::{Query, State};
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::{extract::Query, http::StatusCode, Extension, Json};
+use axum::Json;
 use chrono::Utc;
 
 // Debug handler macro generates better error messages during compile
@@ -52,7 +54,7 @@ pub async fn version() -> (StatusCode, Json<VersionInfo>) {
         (status = 400, description = "User does not exist", body = [MessageResponse])
     )
 )]
-pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extension<SharedState>) -> impl IntoResponse {
+pub async fn query_user(Query(user): Query<UserQuery>, State(state): State<SharedState>) -> impl IntoResponse {
     tracing::info!("Query user: {}", user.username);
     let state = state.read().await;
     match state.db.get(&user.username) {
@@ -81,10 +83,7 @@ pub async fn query_user(Query(user): Query<UserQuery>, Extension(state): Extensi
         (status = CONFLICT, body = [MessageResponse], description = "User already exists")
     )
 )]
-pub async fn create_user(
-    Extension(state): Extension<SharedState>,
-    Json(payload): Json<CreateUser>,
-) -> impl IntoResponse {
+pub async fn create_user(State(state): State<SharedState>, Json(payload): Json<CreateUser>) -> impl IntoResponse {
     let mut state = state.write().await;
     if state.db.get(&payload.username).is_some() {
         tracing::error!("User already exists: {}", payload.username);
@@ -108,7 +107,7 @@ pub async fn create_user(
         (status = 200, body = [UserListResponse])
     )
 )]
-pub async fn list_users(Extension(state): Extension<SharedState>) -> (StatusCode, Json<UserListResponse>) {
+pub async fn list_users(State(state): State<SharedState>) -> (StatusCode, Json<UserListResponse>) {
     tracing::debug!("List users");
     let state = state.read().await;
     let usernames = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
