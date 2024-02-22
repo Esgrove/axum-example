@@ -1,12 +1,12 @@
-use axum::response::IntoResponse;
-use axum::{extract::Query, http::StatusCode, Extension, Json};
-use chrono::Utc;
-
 use crate::build;
 use crate::types::{
     CreateUser, CreateUserResponse, MessageResponse, SharedState, User, UserListResponse, UserQuery, UserResponse,
     VersionInfo,
 };
+
+use axum::response::IntoResponse;
+use axum::{extract::Query, http::StatusCode, Extension, Json};
+use chrono::Utc;
 
 // Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html

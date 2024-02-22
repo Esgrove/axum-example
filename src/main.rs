@@ -9,11 +9,14 @@ mod routes;
 mod types;
 mod utils;
 
+use crate::types::{AppState, LogLevel, SharedState};
+
 use anyhow::Result;
 use axum::routing::{get, post};
 use axum::Router;
 use clap::{arg, Parser};
 use shadow_rs::shadow;
+use tokio::sync::RwLock;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
@@ -24,10 +27,6 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
-
-use types::{LogLevel, SharedState};
-use crate::types::AppState;
 
 // Get build information
 shadow!(build);
@@ -137,7 +136,7 @@ fn build_router(shared_state: &Arc<RwLock<AppState>>) -> Router {
             // Add a timeout so requests don't hang forever.
             TimeoutLayer::new(Duration::from_secs(10)),
         ))
-        .with_state(Arc::clone(&shared_state))
+        .with_state(Arc::clone(shared_state))
 }
 
 #[cfg(test)]
@@ -148,8 +147,8 @@ mod tests {
         http::{Request, StatusCode},
     };
     use http_body_util::BodyExt;
-    use serde_json::{Value};
-    use tower::{ServiceExt};
+    use serde_json::Value;
+    use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_root() {

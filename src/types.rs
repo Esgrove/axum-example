@@ -1,3 +1,5 @@
+use crate::build;
+
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -9,8 +11,6 @@ use utoipa::{IntoParams, ToSchema};
 
 use std::collections::HashMap;
 use std::sync::Arc;
-
-use crate::build;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 
