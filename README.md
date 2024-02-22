@@ -1,6 +1,6 @@
 # Axum REST API example
 
-Basic example and learning exercise for an [Axum](https://github.com/tokio-rs/axum) REST API.
+Personal example and learning exercise for an [Axum](https://github.com/tokio-rs/axum) REST API.
 
 ## Running locally
 
@@ -33,7 +33,7 @@ cargo run --release -- --log error
 RUST_LOG=debug cargo run --release
 ```
 
-Docker:
+Build Docker image and run container:
 
 ```shell
 ./run.sh
