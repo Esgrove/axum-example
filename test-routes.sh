@@ -9,11 +9,14 @@ source "$DIR/common.sh"
 USAGE="Usage: $0 [OPTIONS]
 
 Test API routes.
-Port number can be set with env variable: PORT=3000 $0
+Port number can be set with env variable: PORT=80 $0
 
 OPTIONS: All options are optional
     -h | --help
         Display these instructions.
+
+    -p | --port [NUMBER]
+        Specify port number to use. Default is 3000.
 
     -v | --verbose
         Display commands being executed."
@@ -22,6 +25,10 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -h | --help)
             print_usage_and_exit
+            ;;
+        -p | --port)
+            PORT=$2
+            shift
             ;;
         -v | --verbose)
             set -x
