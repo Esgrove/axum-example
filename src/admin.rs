@@ -9,6 +9,7 @@ use axum::{
 };
 
 /// Create admin routes.
+/// Helper method to easily nest all admin routes under common prefix.
 pub fn admin_routes() -> Router<SharedState> {
     Router::new()
         .route("/clear_users", delete(delete_all_users))

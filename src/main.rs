@@ -130,7 +130,7 @@ fn build_router(shared_state: &Arc<RwLock<AppState>>) -> Router {
         .route("/user", get(routes::query_user))
         .route("/list_users", get(routes::list_users))
         .route("/users", post(routes::create_user))
-        // Put admin routes under /admin
+        // Put all admin routes under /admin
         .nest("/admin", admin::admin_routes())
         .layer((
             TraceLayer::new_for_http(),
@@ -170,4 +170,6 @@ mod tests {
         assert!(body.get("message").is_some(), "Body does not contain 'message' key");
         assert!(body["message"].is_string(), "'message' is not a string");
     }
+
+    // TODO: more tests
 }
