@@ -1,4 +1,4 @@
-//! Run with
+//! Run server locally with
 //!
 //! ```not_rust
 //! cargo run --release
@@ -46,7 +46,7 @@ shadow!(build);
 )]
 struct Args {
     /// Optional host IP to listen to (for example "0.0.0.0")
-    #[arg(long, value_name = "HOST")]
+    #[arg(long, value_name = "IP")]
     host: Option<String>,
 
     /// Log level to use
@@ -54,7 +54,7 @@ struct Args {
     log: Option<LogLevel>,
 
     /// Optional port number to use (default is 3000)
-    #[arg(short, long, value_name = "PORT")]
+    #[arg(short, long, value_name = "NUMBER")]
     port: Option<u16>,
 
     /// Custom version flag instead of clap default
@@ -62,6 +62,7 @@ struct Args {
     version: bool,
 }
 
+/// OpenAPI documentation
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -86,7 +87,6 @@ pub struct ApiDoc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Parse command line arguments
     let args = Args::parse();
     if args.version {
         println!("{}", utils::formatted_version_info());
@@ -95,7 +95,9 @@ async fn main() -> Result<()> {
 
     let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
     let port_number = args.port.unwrap_or(3000);
+    let address = format!("{host}:{port_number}");
 
+    // Log level filter
     let mut filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     if let Some(ref level) = args.log {
         filter_layer = filter_layer.add_directive(level.to_filter().into());
@@ -104,14 +106,16 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
     tracing::info!("{}", build::VERSION);
 
-    let listener = tokio::net::TcpListener::bind(format!("{host}:{port_number}")).await?;
+    let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
 
-    // Build application with routes
+    // Thread-safe smart pointer to shared data
     let shared_state = SharedState::default();
+
+    // Build application with routes
     let app = build_router(&shared_state);
 
-    // Run app with Hyper
+    // Run server app with Hyper
     axum::serve(listener, app)
         .with_graceful_shutdown(utils::shutdown_signal())
         .await?;
