@@ -2,7 +2,7 @@
 
 [package]
 name = "axum-example"
-version = "0.7.2"
+version = "0.8.0"
 edition = "2021"
 description = "Rust Axum REST API example."
 authors = ["Esgrove <esgrove@outlook.com>"]
@@ -26,7 +26,7 @@ serde_json = "1.0.114"
 shadow-rs = "0.26.1"
 tokio = { version = "1.36.0", features = ["macros", "full"] }
 tower = { version = "0.4.13", features = ["util"] }
-tower-http = { version = "0.5.1", features = ["timeout", "trace"] }
+tower-http = { version = "0.5.2", features = ["timeout", "trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 utoipa = { version = "4.2.0", features = ["axum_extras"] }
