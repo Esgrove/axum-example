@@ -65,7 +65,7 @@ print_response() {
     local response="$1"
     if echo "$response" | grep -q '^2'; then
         echo "Status code: $(green "$response")"
-    elif echo "$response" | grep -q '^4'; then
+    elif echo "$response" | grep -qE '^[45]'; then
         echo "Status code: $(red "$response")"
     else
         echo "Status code: $response"
