@@ -2,7 +2,7 @@
 
 [package]
 name = "axum-example"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 description = "Rust Axum REST API example."
 authors = ["Esgrove <esgrove@outlook.com>"]
