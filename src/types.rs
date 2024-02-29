@@ -114,19 +114,20 @@ pub enum RemoveItemResponse {
 }
 
 /// Custom error type that enables using anyhow error handling in routes.
-pub(crate) struct AppError(anyhow::Error);
+/// This is used for server-side errors and returns status code 500 with the error message.
+pub struct ServerError(anyhow::Error);
 
-// Tell axum how to convert `AppError` into a response.
-impl IntoResponse for AppError {
+// Tell axum how to convert `ServerError` into a response.
+impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         (StatusCode::INTERNAL_SERVER_ERROR, Json(format!("Error: {}", self.0))).into_response()
     }
 }
 
 // This enables using `?` on functions that return `Result<_, anyhow::Error>`
-// to turn them into `Result<_, AppError>`.
+// to turn them into `Result<_, ServerError>`.
 // This way we don't need to do that manually.
-impl<E> From<E> for AppError
+impl<E> From<E> for ServerError
 where
     E: Into<anyhow::Error>,
 {

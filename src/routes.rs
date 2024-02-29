@@ -1,6 +1,6 @@
 use crate::build;
 use crate::types::{
-    AppError, CreateItem, CreateItemResponse, Item, ItemListResponse, ItemQuery, ItemResponse, MessageResponse,
+    CreateItem, CreateItemResponse, Item, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, ServerError,
     SharedState, VersionInfo,
 };
 
@@ -86,7 +86,7 @@ pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<Share
 pub async fn create_item(
     State(state): State<SharedState>,
     Json(payload): Json<CreateItem>,
-) -> Result<CreateItemResponse, AppError> {
+) -> Result<CreateItemResponse, ServerError> {
     let mut state = state.write().await;
     if state.db.get(&payload.name).is_some() {
         tracing::error!("Item already exists: {}", payload.name);
@@ -97,6 +97,8 @@ pub async fn create_item(
     }
     // Check if id was provided by client
     let item = match payload.id {
+        // Creating item with client provided id can fail if id is not valid,
+        // which will cause this method to exit with `ServerError` due to the `?` operator.
         Some(id) => Item::new(payload.name, id)?,
         _ => Item::new_with_random_id(payload.name),
     };
