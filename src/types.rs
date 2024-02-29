@@ -211,7 +211,7 @@ impl VersionInfo {
         VersionInfo {
             name: build::PROJECT_NAME.to_string(),
             version: build::PKG_VERSION.to_string(),
-            build_time: build::BUILD_TIME.to_string(),
+            build_time: build::BUILD_TIME_3339.to_string(),
             branch: build::BRANCH.to_string(),
             commit: build::COMMIT_HASH.to_string(),
             commit_time: build::COMMIT_DATE.to_string(),

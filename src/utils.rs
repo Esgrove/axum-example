@@ -31,7 +31,7 @@ pub fn formatted_version_info() -> String {
         "{} {} {} {} {} {} {}",
         build::PROJECT_NAME,
         build::PKG_VERSION,
-        build::BUILD_TIME,
+        build::BUILD_TIME_3339,
         build::BRANCH,
         build::SHORT_COMMIT,
         build::BUILD_OS,

@@ -8,7 +8,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use chrono::Utc;
+use chrono::{SecondsFormat, Utc};
 
 // Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -23,9 +23,14 @@ use chrono::Utc;
     )
 )]
 pub async fn root() -> (StatusCode, Json<MessageResponse>) {
-    let datetime = Utc::now().to_rfc2822();
+    let datetime = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
     tracing::info!("Root: {}", datetime);
-    (StatusCode::OK, Json(MessageResponse { message: datetime }))
+    (
+        StatusCode::OK,
+        Json(MessageResponse {
+            message: format!("{} {datetime}", build::PROJECT_NAME),
+        }),
+    )
 }
 
 /// Return version information for API.

@@ -171,5 +171,31 @@ mod tests {
         assert!(body["message"].is_string(), "'message' is not a string");
     }
 
+    #[tokio::test]
+    async fn test_version() {
+        let shared_state = SharedState::default();
+        let app = build_router(&shared_state);
+
+        let response = app
+            .oneshot(Request::builder().uri("/version").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body: Value = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!(body["name"], build::PROJECT_NAME);
+        assert_eq!(body["version"], build::PKG_VERSION);
+        assert_eq!(body["build_time"], build::BUILD_TIME_3339);
+        assert_eq!(body["branch"], build::BRANCH);
+        assert_eq!(body["commit"], build::COMMIT_HASH);
+        assert_eq!(body["commit_time"], build::COMMIT_DATE);
+        assert_eq!(body["build_os"], build::BUILD_OS);
+        assert_eq!(body["rust_version"], build::RUST_VERSION);
+        assert_eq!(body["rust_channel"], build::RUST_CHANNEL);
+    }
+
     // TODO: more tests
 }
