@@ -55,8 +55,8 @@ pub async fn version() -> (StatusCode, Json<VersionInfo>) {
     path = "/item",
     params(ItemQuery),
     responses(
-        (status = 200, description = "Found existing item", body = [Item]),
-        (status = 400, description = "Item does not exist", body = [MessageResponse])
+        (status = 200, body = [Item], description = "Found existing item"),
+        (status = 400, body = [MessageResponse], description = "Item does not exist")
     )
 )]
 pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
@@ -127,7 +127,6 @@ pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<I
     let state = state.read().await;
     let names = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
     let num_items = names.len();
-    let response = ItemListResponse { num_items, names };
     tracing::debug!("List items: found {num_items} items");
-    (StatusCode::OK, Json(response))
+    (StatusCode::OK, Json(ItemListResponse { num_items, names }))
 }
