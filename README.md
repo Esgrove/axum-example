@@ -54,10 +54,10 @@ curl -s http://127.0.0.1:3000 | jq .
 
 curl -s http://127.0.0.1:3000/version | jq .
 
-curl -s http://127.0.0.1:3000/user?username=akseli | jq .
-curl -s http://127.0.0.1:3000/user?username=pizzalover9000 | jq .
+curl -s http://127.0.0.1:3000/item?name=akseli | jq .
+curl -s http://127.0.0.1:3000/item?name=pizzalover9000 | jq .
 
-curl -s -H "Content-Type: application/json" -d '{"username":"test"}' http://127.0.0.1:3000/users | jq .
+curl -s -H "Content-Type: application/json" -d '{"name":"test"}' http://127.0.0.1:3000/items | jq .
 ```
 
 ### OpenAPI documentation

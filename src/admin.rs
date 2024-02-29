@@ -1,4 +1,4 @@
-use crate::types::{MessageResponse, RemoveUserResponse, SharedState};
+use crate::types::{MessageResponse, RemoveItemResponse, SharedState};
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -12,50 +12,50 @@ use axum::{
 /// Helper method to easily nest all admin routes under common prefix.
 pub fn admin_routes() -> Router<SharedState> {
     Router::new()
-        .route("/clear_users", delete(delete_all_users))
-        .route("/remove/:username", delete(remove_user))
+        .route("/clear_items", delete(delete_all_items))
+        .route("/remove/:name", delete(remove_item))
 }
 
-/// Remove all users.
+/// Remove all items.
 #[axum::debug_handler]
 #[utoipa::path(
     delete,
-    path = "/admin/clear_users",
+    path = "/admin/clear_items",
     responses(
-    (status = 200, body = [MessageResponse], description = "Report number of users deleted")
+    (status = 200, body = [MessageResponse], description = "Report number of items deleted")
     )
 )]
-async fn delete_all_users(State(state): State<SharedState>) -> impl IntoResponse {
+async fn delete_all_items(State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
-    let number_of_users = state.db.len();
-    tracing::info!("Delete all {number_of_users} users");
+    let number_of_items = state.db.len();
+    tracing::info!("Delete all {number_of_items} items");
     state.db.clear();
     (
         StatusCode::OK,
-        Json(MessageResponse::new(format!("Removed {number_of_users} users"))),
+        Json(MessageResponse::new(format!("Removed {number_of_items} items"))),
     )
 }
 
-/// Try to remove user with given username.
+/// Try to remove item with given name.
 #[axum::debug_handler]
 #[utoipa::path(
     delete,
-    path = "/admin/remove/:username",
+    path = "/admin/remove/:name",
     responses(
-    (status = OK, body = [User], description = "User removed"),
-    (status = NOT_FOUND, body = [MessageResponse], description = "User does not exist")
+    (status = OK, body = [Item], description = "Item removed"),
+    (status = NOT_FOUND, body = [MessageResponse], description = "Item does not exist")
     )
 )]
-async fn remove_user(Path(username): Path<String>, State(state): State<SharedState>) -> impl IntoResponse {
+async fn remove_item(Path(name): Path<String>, State(state): State<SharedState>) -> impl IntoResponse {
     let mut state = state.write().await;
-    match state.db.remove(&username) {
-        Some(existing_user) => {
-            tracing::info!("Remove user: {}", username);
-            RemoveUserResponse::Removed(existing_user.clone())
+    match state.db.remove(&name) {
+        Some(existing_item) => {
+            tracing::info!("Remove item: {}", name);
+            RemoveItemResponse::Removed(existing_item.clone())
         }
         None => {
-            tracing::error!("Remove user failed for non-existing username: {}", username);
-            RemoveUserResponse::new_error(format!("User does not exist: {}", username))
+            tracing::error!("Remove item failed for non-existing name: {}", name);
+            RemoveItemResponse::new_error(format!("Item does not exist: {}", name))
         }
     }
 }

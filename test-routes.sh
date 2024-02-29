@@ -86,17 +86,19 @@ fi
 
 get "http://127.0.0.1:$PORT"
 get "http://127.0.0.1:$PORT/version"
-get "http://127.0.0.1:$PORT/list_users"
-post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'
-get "http://127.0.0.1:$PORT/user?username=esgrove"
-post "http://127.0.0.1:$PORT/users" '{"username":"esgrove"}'
-get "http://127.0.0.1:$PORT/user?username=pizzalover9000"
+get "http://127.0.0.1:$PORT/list_items"
+post "http://127.0.0.1:$PORT/items" '{"name":"esgrove"}'
+get "http://127.0.0.1:$PORT/item?name=esgrove"
+post "http://127.0.0.1:$PORT/items" '{"name":"esgrove"}'
+post "http://127.0.0.1:$PORT/items" '{"name":"five","id":5555}'
+post "http://127.0.0.1:$PORT/items" '{"name":"error","id":1}'
+get "http://127.0.0.1:$PORT/item?name=pizzalover9000"
 
 for name in pizzalover9000 akseli swanson; do
-    post "http://127.0.0.1:$PORT/users" "{\"username\":\"$name\"}"
+    post "http://127.0.0.1:$PORT/items" "{\"name\":\"$name\"}"
 done
 
-get "http://127.0.0.1:$PORT/list_users"
+get "http://127.0.0.1:$PORT/list_items"
 
 # Trying to use GET with admin routes results in 405 "Method Not Allowed"
 get "http://127.0.0.1:$PORT/admin/remove/pizzalover"
@@ -104,8 +106,8 @@ get "http://127.0.0.1:$PORT/admin/remove/pizzalover"
 delete "http://127.0.0.1:$PORT/admin/remove/pizzalover"
 delete "http://127.0.0.1:$PORT/admin/remove/pizzalover9000"
 
-get "http://127.0.0.1:$PORT/list_users"
+get "http://127.0.0.1:$PORT/list_items"
 
-delete "http://127.0.0.1:$PORT/admin/clear_users"
+delete "http://127.0.0.1:$PORT/admin/clear_items"
 
-get "http://127.0.0.1:$PORT/list_users"
+get "http://127.0.0.1:$PORT/list_items"

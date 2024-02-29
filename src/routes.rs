@@ -1,7 +1,7 @@
 use crate::build;
 use crate::types::{
-    CreateUser, CreateUserResponse, MessageResponse, SharedState, User, UserListResponse, UserQuery, UserResponse,
-    VersionInfo,
+    AppError, CreateItem, CreateItemResponse, Item, ItemListResponse, ItemQuery, ItemResponse, MessageResponse,
+    SharedState, VersionInfo,
 };
 
 use axum::extract::{Query, State};
@@ -42,77 +42,85 @@ pub async fn version() -> (StatusCode, Json<VersionInfo>) {
     (StatusCode::OK, Json(VersionInfo::from_build_info()))
 }
 
-/// Get user info.
+/// Get item info.
 /// Example for using query parameters.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
-    path = "/user",
-    params(UserQuery),
+    path = "/item",
+    params(ItemQuery),
     responses(
-        (status = 200, description = "Found existing user", body = [User]),
-        (status = 400, description = "User does not exist", body = [MessageResponse])
+        (status = 200, description = "Found existing item", body = [Item]),
+        (status = 400, description = "Item does not exist", body = [MessageResponse])
     )
 )]
-pub async fn query_user(Query(user): Query<UserQuery>, State(state): State<SharedState>) -> impl IntoResponse {
-    tracing::info!("Query user: {}", user.username);
+pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
+    tracing::info!("Query item: {}", item.name);
     let state = state.read().await;
-    match state.db.get(&user.username) {
-        Some(existing_user) => {
-            tracing::info!("{:?}", existing_user);
-            UserResponse::Found(existing_user.clone())
+    match state.db.get(&item.name) {
+        Some(existing_item) => {
+            tracing::info!("{:?}", existing_item);
+            ItemResponse::Found(existing_item.clone())
         }
         None => {
-            tracing::error!("User not found: {}", user.username);
-            UserResponse::Error(MessageResponse {
-                message: format!("User does not exist: {}", user.username),
+            tracing::error!("Item not found: {}", item.name);
+            ItemResponse::Error(MessageResponse {
+                message: format!("Item does not exist: {}", item.name),
             })
         }
     }
 }
 
-/// Create new user.
+/// Create new item.
 /// Example for doing post with data.
 #[axum::debug_handler]
 #[utoipa::path(
     post,
-    path = "/users",
-    request_body = CreateUser,
+    path = "/items",
+    request_body = CreateItem,
     responses(
-        (status = CREATED, body = [User], description = "New user created"),
-        (status = CONFLICT, body = [MessageResponse], description = "User already exists")
+        (status = CREATED, body = [Item], description = "New item created"),
+        (status = CONFLICT, body = [MessageResponse], description = "Item already exists")
     )
 )]
-pub async fn create_user(State(state): State<SharedState>, Json(payload): Json<CreateUser>) -> impl IntoResponse {
+pub async fn create_item(
+    State(state): State<SharedState>,
+    Json(payload): Json<CreateItem>,
+) -> Result<CreateItemResponse, AppError> {
     let mut state = state.write().await;
-    if state.db.get(&payload.username).is_some() {
-        tracing::error!("User already exists: {}", payload.username);
-        return CreateUserResponse::Error(MessageResponse::new(format!(
-            "User already exists: {}",
-            payload.username
-        )));
+    if state.db.get(&payload.name).is_some() {
+        tracing::error!("Item already exists: {}", payload.name);
+        return Ok(CreateItemResponse::Error(MessageResponse::new(format!(
+            "Item already exists: {}",
+            payload.name
+        ))));
     }
-    let user = User::new(payload.username);
-    state.db.insert(user.username.clone(), user.clone());
-    tracing::info!("Create user: {}", user.username);
-    CreateUserResponse::Created(user)
+    // Check if id was provided by client
+    let item = match payload.id {
+        Some(id) => Item::new(payload.name, id)?,
+        _ => Item::new_with_random_id(payload.name),
+    };
+    // TODO: should probably ensure ids are unique too
+    state.db.insert(item.name.clone(), item.clone());
+    tracing::info!("Create item: {}", item.name);
+    Ok(CreateItemResponse::Created(item))
 }
 
-/// List all users
+/// List all items
 #[axum::debug_handler]
 #[utoipa::path(
     get,
-    path = "/list_users",
+    path = "/list_items",
     responses(
-        (status = 200, body = [UserListResponse])
+        (status = 200, body = [ItemListResponse])
     )
 )]
-pub async fn list_users(State(state): State<SharedState>) -> (StatusCode, Json<UserListResponse>) {
-    tracing::debug!("List users");
+pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<ItemListResponse>) {
+    tracing::debug!("List items");
     let state = state.read().await;
-    let usernames = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
-    let num_users = usernames.len();
-    let response = UserListResponse { num_users, usernames };
-    tracing::debug!("List users: found {num_users} users");
+    let names = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
+    let num_items = names.len();
+    let response = ItemListResponse { num_items, names };
+    tracing::debug!("List items: found {num_items} items");
     (StatusCode::OK, Json(response))
 }

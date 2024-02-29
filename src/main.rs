@@ -67,18 +67,18 @@ struct Args {
     paths(
         routes::root,
         routes::version,
-        routes::query_user,
-        routes::list_users,
-        routes::create_user,
-        admin::delete_all_users,
-        admin::remove_user,
+        routes::query_item,
+        routes::list_items,
+        routes::create_item,
+        admin::delete_all_items,
+        admin::remove_item,
     ),
     components(schemas(
-        types::CreateUser,
+        types::CreateItem,
         types::MessageResponse,
-        types::User,
-        types::UserListResponse,
-        types::UserQuery,
+        types::Item,
+        types::ItemListResponse,
+        types::ItemQuery,
         types::VersionInfo,
     ))
 )]
@@ -89,7 +89,7 @@ async fn main() -> Result<()> {
     // Parse command line arguments
     let args = Args::parse();
     if args.version {
-        println!("{}", utils::api_version_info());
+        println!("{}", utils::formatted_version_info());
         return Ok(());
     }
 
@@ -127,9 +127,9 @@ fn build_router(shared_state: &Arc<RwLock<AppState>>) -> Router {
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
         .route("/", get(routes::root))
         .route("/version", get(routes::version))
-        .route("/user", get(routes::query_user))
-        .route("/list_users", get(routes::list_users))
-        .route("/users", post(routes::create_user))
+        .route("/item", get(routes::query_item))
+        .route("/list_items", get(routes::list_items))
+        .route("/items", post(routes::create_item))
         // Put all admin routes under /admin
         .nest("/admin", admin::admin_routes())
         .layer((

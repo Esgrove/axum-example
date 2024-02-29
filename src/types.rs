@@ -1,5 +1,6 @@
 use crate::build;
 
+use anyhow::anyhow;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -27,48 +28,51 @@ pub enum LogLevel {
 /// Shared state that simulates a database
 #[derive(Default)]
 pub struct AppState {
-    pub db: HashMap<String, User>,
+    pub db: HashMap<String, Item>,
 }
 
-/// Post payload for creating a new user
+/// Post payload for creating a new item
 #[derive(Debug, Clone, Deserialize, ToSchema)]
-pub struct CreateUser {
+pub struct CreateItem {
     #[schema(example = "esgrove")]
-    pub username: String,
+    pub name: String,
+    /// Optional id field, allowing clients to specify an id or have the server generate one
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<u64>,
 }
 
-/// Query user information with username
+/// Query item information with name
 #[derive(Debug, Clone, Deserialize, ToSchema, IntoParams)]
-pub struct UserQuery {
+pub struct ItemQuery {
     #[schema(example = "esgrove")]
-    pub username: String,
+    pub name: String,
 }
 
-/// User information
+/// Item information
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, ToSchema)]
-pub struct User {
+pub struct Item {
     /// `id` will be in range 1000..9999
     #[schema(example = "1234")]
     pub id: u64,
     #[schema(example = "esgrove")]
-    pub username: String,
+    pub name: String,
 }
 
 /// Simple response with a message
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct MessageResponse {
     /// Message can be either information or an error message
-    #[schema(example = "User already exists: esgrove")]
+    #[schema(example = "Item already exists: esgrove")]
     pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UserListResponse {
-    /// The total number of users
+pub struct ItemListResponse {
+    /// The total number of items
     #[schema(example = "5")]
-    pub num_users: usize,
-    /// List of all usernames
-    pub usernames: Vec<String>,
+    pub num_items: usize,
+    /// List of all names
+    pub names: Vec<String>,
 }
 
 /// API version information.
@@ -94,32 +98,28 @@ pub struct VersionInfo {
     pub rust_channel: String,
 }
 
-pub enum UserResponse {
-    Found(User),
+pub enum ItemResponse {
+    Found(Item),
     Error(MessageResponse),
 }
 
-pub enum CreateUserResponse {
-    Created(User),
+pub enum CreateItemResponse {
+    Created(Item),
     Error(MessageResponse),
 }
 
-pub enum RemoveUserResponse {
-    Removed(User),
+pub enum RemoveItemResponse {
+    Removed(Item),
     Error(MessageResponse),
 }
 
 /// Custom error type that enables using anyhow error handling in routes.
-struct AppError(anyhow::Error);
+pub(crate) struct AppError(anyhow::Error);
 
 // Tell axum how to convert `AppError` into a response.
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", self.0),
-        )
-            .into_response()
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(format!("Error: {}", self.0))).into_response()
     }
 }
 
@@ -135,36 +135,36 @@ where
     }
 }
 
-impl RemoveUserResponse {
+impl RemoveItemResponse {
     // Accept any type that implements std::fmt::Display, not just strings.
     pub fn new_error<T: std::fmt::Display>(message: T) -> Self {
-        RemoveUserResponse::Error(MessageResponse::new(format!("{}", message)))
+        RemoveItemResponse::Error(MessageResponse::new(format!("{}", message)))
     }
 }
 
-impl IntoResponse for CreateUserResponse {
+impl IntoResponse for CreateItemResponse {
     fn into_response(self) -> Response {
         match self {
-            CreateUserResponse::Created(user) => (StatusCode::CREATED, Json(user)).into_response(),
-            CreateUserResponse::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
+            CreateItemResponse::Created(item) => (StatusCode::CREATED, Json(item)).into_response(),
+            CreateItemResponse::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
         }
     }
 }
 
-impl IntoResponse for UserResponse {
+impl IntoResponse for ItemResponse {
     fn into_response(self) -> Response {
         match self {
-            UserResponse::Found(user) => (StatusCode::OK, Json(user)).into_response(),
-            UserResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
+            ItemResponse::Found(item) => (StatusCode::OK, Json(item)).into_response(),
+            ItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
         }
     }
 }
 
-impl IntoResponse for RemoveUserResponse {
+impl IntoResponse for RemoveItemResponse {
     fn into_response(self) -> Response {
         match self {
-            RemoveUserResponse::Removed(user) => (StatusCode::OK, Json(user)).into_response(),
-            RemoveUserResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
+            RemoveItemResponse::Removed(item) => (StatusCode::OK, Json(item)).into_response(),
+            RemoveItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
         }
     }
 }
@@ -175,11 +175,21 @@ impl MessageResponse {
     }
 }
 
-impl User {
-    pub fn new(username: String) -> User {
+impl Item {
+    /// Try to create new Item with given name and id.
+    /// Returns Err if id is not valid.
+    pub fn new(name: String, id: u64) -> anyhow::Result<Item> {
+        if !(1000..=10000).contains(&id) {
+            Err(anyhow!("ID must be between 1000 and 9999"))
+        } else {
+            Ok(Item { name, id })
+        }
+    }
+
+    pub fn new_with_random_id(name: String) -> Item {
         let mut rng = rand::thread_rng();
         let id: u64 = rng.gen_range(1000..=9999);
-        User { username, id }
+        Item { name, id }
     }
 }
 
