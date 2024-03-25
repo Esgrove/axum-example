@@ -1,4 +1,5 @@
-use crate::build;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use axum::http::StatusCode;
@@ -10,8 +11,7 @@ use tokio::sync::RwLock;
 use tracing::level_filters::LevelFilter;
 use utoipa::{IntoParams, ToSchema};
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use crate::build;
 
 pub type SharedState = Arc<RwLock<AppState>>;
 

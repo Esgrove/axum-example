@@ -1,6 +1,6 @@
-use crate::build;
-
 use tokio::signal;
+
+use crate::build;
 
 /// Handle item abort
 pub async fn shutdown_signal() {

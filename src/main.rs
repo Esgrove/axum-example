@@ -9,7 +9,8 @@ mod routes;
 mod types;
 mod utils;
 
-use crate::types::{AppState, LogLevel, SharedState};
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use axum::routing::{get, post};
@@ -25,8 +26,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use std::sync::Arc;
-use std::time::Duration;
+use crate::types::{AppState, LogLevel, SharedState};
 
 // Get build information
 shadow!(build);

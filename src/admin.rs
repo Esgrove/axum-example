@@ -1,5 +1,3 @@
-use crate::types::{MessageResponse, RemoveItemResponse, SharedState};
-
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{
@@ -7,6 +5,8 @@ use axum::{
     routing::delete,
     Json, Router,
 };
+
+use crate::types::{MessageResponse, RemoveItemResponse, SharedState};
 
 /// Create admin routes.
 /// Helper method to easily nest all admin routes under common prefix.
