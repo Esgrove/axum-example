@@ -125,7 +125,7 @@ pub async fn create_item(
 pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<ItemListResponse>) {
     tracing::debug!("List items");
     let state = state.read().await;
-    let names = state.db.keys().map(|key| key.to_string()).collect::<Vec<String>>();
+    let names: Vec<String> = state.db.keys().map(|key| key.to_string()).collect();
     let num_items = names.len();
     tracing::debug!("List items: found {num_items} items");
     (StatusCode::OK, Json(ItemListResponse { num_items, names }))
