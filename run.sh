@@ -25,7 +25,7 @@ fi
 
 if [ -z "$(docker ps -q --filter "name=axum-example")" ]; then
     print_magenta "Building Docker image..."
-    docker build -t axum-runtime .
+    docker build --tag axum-runtime --file Dockerfile .
 
     if docker ps -a | grep -q axum-example; then
         print_yellow "Deleting existing container"
