@@ -93,7 +93,7 @@ pub async fn create_item(
     Json(payload): Json<CreateItem>,
 ) -> Result<CreateItemResponse, ServerError> {
     let mut state = state.write().await;
-    if state.db.get(&payload.name).is_some() {
+    if state.db.contains_key(&payload.name) {
         tracing::error!("Item already exists: {}", payload.name);
         return Ok(CreateItemResponse::Error(MessageResponse::new(format!(
             "Item already exists: {}",
