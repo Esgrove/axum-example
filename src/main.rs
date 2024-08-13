@@ -93,6 +93,9 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // Print backtrace when a panic occurs
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     let host = args.host.unwrap_or_else(|| "127.0.0.1".to_string());
     let port_number = args.port.unwrap_or(3000);
     let address = format!("{host}:{port_number}");
