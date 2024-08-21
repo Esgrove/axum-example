@@ -5,6 +5,7 @@
 //! ```
 
 mod admin;
+mod config;
 mod routes;
 mod types;
 mod utils;

@@ -1,6 +1,16 @@
+use colored::{ColoredString, Colorize};
 use tokio::signal;
 
 use crate::build;
+
+/// Format bool value as a coloured string.
+pub fn colorize_bool(value: bool) -> ColoredString {
+    if value {
+        "true".green()
+    } else {
+        "false".yellow()
+    }
+}
 
 /// Handle item abort
 pub async fn shutdown_signal() {
