@@ -3,18 +3,20 @@ use std::{env, fmt, fs, path::PathBuf};
 use anyhow::{anyhow, Context};
 use colored::Colorize;
 use dirs::home_dir;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::utils;
 
 const CONFIG_FILE_NAME: &str = "axum-example.toml";
 
 /// User config options from a config file.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Config {
     #[serde(default)]
-    /// Enable S3 history backup
-    pub enable_s3_backup: bool,
+    /// Enable logging database status
+    pub periodic_db_log_enabled: bool,
+    /// Logging interval in minutes
+    pub periodic_db_log_interval: u64,
 }
 
 impl Config {
@@ -68,6 +70,11 @@ impl Config {
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", "Config:".bold())?;
-        write!(f, "  enable_s3_backup: {}", utils::colorize_bool(self.enable_s3_backup))
+        writeln!(
+            f,
+            "  periodic_db_log_enabled: {}",
+            utils::colorize_bool(self.periodic_db_log_enabled)
+        )?;
+        write!(f, "  periodic_db_log_interval: {}", self.periodic_db_log_interval)
     }
 }

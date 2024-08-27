@@ -27,6 +27,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::config::Config;
 use crate::types::{AppState, LogLevel, SharedState};
 
 // Get build information
@@ -110,11 +111,20 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt().with_env_filter(filter_layer).init();
     tracing::info!("{}", build::VERSION);
 
+    let config = Config::get_config();
+
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
 
     // Thread-safe smart pointer to shared data
     let shared_state = SharedState::default();
+
+    if config.periodic_db_log_enabled {
+        let state_for_log = Arc::clone(&shared_state);
+        tokio::spawn(async move {
+            periodic_history_log(state_for_log, config.periodic_db_log_interval).await;
+        });
+    }
 
     // Build application with routes
     let app = build_router(&shared_state);
@@ -125,6 +135,20 @@ async fn main() -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+/// Run history statistics logging periodically.
+async fn periodic_history_log(state: SharedState, interval_minutes: u64) {
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_minutes * 60));
+    loop {
+        interval.tick().await;
+        let state = state.read().await;
+        let num_keys = state.db.len();
+        let capacity = state.db.capacity();
+        // TODO: print more statistics / info
+        tracing::info!("db items: {num_keys}");
+        tracing::info!("db capacity: {capacity}");
+    }
 }
 
 /// Create Router app with routes
