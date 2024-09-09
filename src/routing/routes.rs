@@ -2,49 +2,50 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use axum_extra::extract::WithRejection;
 use chrono::{SecondsFormat, Utc};
 
 use crate::build;
-use crate::types::{
-    CreateItem, CreateItemResponse, Item, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, ServerError,
-    SharedState, VersionInfo,
+use crate::schemas::{
+    CreateItem, CreateItemResponse, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, RejectionError,
+    ServerError, VersionInfo, VERSION_INFO,
 };
+use crate::types::{Item, SharedState};
 
 // Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
 
-/// Root returns a simple json response with the current date and time.
+/// Returns a simple JSON response with API name together with the current date and time.
+/// Used primarily as a health check to verify the API is up and responding.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
-    path = "/root",
+    path = "/",
     responses(
-        (status = 200, body = [MessageResponse], description = "Show current date and time")
+        (status = OK, body = [MessageResponse], description = "Return API name with current datetime")
     )
 )]
 pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     let datetime = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
-    tracing::info!("Root: {}", datetime);
+    tracing::debug!("Root: {}", datetime);
     (
         StatusCode::OK,
-        Json(MessageResponse {
-            message: format!("{} {datetime}", build::PROJECT_NAME),
-        }),
+        Json(MessageResponse::new(format!("{} {}", build::PROJECT_NAME, datetime))),
     )
 }
 
-/// Return version information for API.
+/// Return version and build information for the API.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
     path = "/version",
     responses(
-        (status = 200, body = [VersionInfo], description = "Version information")
+        (status = OK, body = [VersionInfo], description = "Version information")
     )
 )]
-pub async fn version() -> (StatusCode, Json<VersionInfo>) {
-    tracing::info!("Version: {}", build::PKG_VERSION);
-    (StatusCode::OK, Json(VersionInfo::from_build_info()))
+pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
+    tracing::debug!("Version: {}", build::PKG_VERSION);
+    (StatusCode::OK, Json(&VERSION_INFO))
 }
 
 /// Get item info.
@@ -90,7 +91,7 @@ pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<Share
 )]
 pub async fn create_item(
     State(state): State<SharedState>,
-    Json(payload): Json<CreateItem>,
+    WithRejection(Json(payload), _): WithRejection<Json<CreateItem>, RejectionError>,
 ) -> Result<CreateItemResponse, ServerError> {
     let mut state = state.write().await;
     if state.db.contains_key(&payload.name) {

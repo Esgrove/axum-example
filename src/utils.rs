@@ -12,7 +12,22 @@ pub fn colorize_bool(value: bool) -> ColoredString {
     }
 }
 
-/// Handle item abort
+/// Return formatted version information string
+pub fn formatted_version_info() -> String {
+    format!(
+        "{} {} {} {} {} {} {}",
+        build::PROJECT_NAME,
+        build::PKG_VERSION,
+        build::BUILD_TIME_3339,
+        build::BRANCH,
+        build::SHORT_COMMIT,
+        build::BUILD_OS,
+        build::RUST_VERSION,
+    )
+}
+
+#[allow(clippy::redundant_pub_crate)]
+/// Handle shutdown signal.
 pub async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
@@ -30,21 +45,7 @@ pub async fn shutdown_signal() {
     let terminate = std::future::pending::<()>();
 
     tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
+        () = ctrl_c => {},
+        () = terminate => {},
     }
-}
-
-/// Return formatted version information string
-pub fn formatted_version_info() -> String {
-    format!(
-        "{} {} {} {} {} {} {}",
-        build::PROJECT_NAME,
-        build::PKG_VERSION,
-        build::BUILD_TIME_3339,
-        build::BRANCH,
-        build::SHORT_COMMIT,
-        build::BUILD_OS,
-        build::RUST_VERSION,
-    )
 }

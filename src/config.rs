@@ -11,16 +11,16 @@ const CONFIG_FILE_NAME: &str = "axum-example.toml";
 
 /// User config options from a config file.
 #[derive(Debug, Default, Deserialize, Serialize)]
-pub struct Config {
+pub struct FileConfig {
     #[serde(default)]
     /// Enable logging database status
     pub periodic_db_log_enabled: bool,
-    /// Logging interval in minutes
+    /// Logging interval in seconds
     pub periodic_db_log_interval: u64,
 }
 
-impl Config {
-    /// Try to read config from file if it exists.
+impl FileConfig {
+    /// Try to read config from the file if it exists.
     /// Otherwise, fall back to default config.
     pub fn get_config() -> Self {
         Self::read_user_config().unwrap_or_default()
@@ -67,7 +67,7 @@ impl Config {
     }
 }
 
-impl fmt::Display for Config {
+impl fmt::Display for FileConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", "Config:".bold())?;
         writeln!(

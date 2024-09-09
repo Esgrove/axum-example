@@ -1,6 +1,6 @@
 [package]
 name = "axum-example"
-version = "0.8.2"
+version = "0.9.0"
 edition = "2021"
 description = "Rust Axum REST API example."
 authors = ["Esgrove <esgrove@outlook.com>"]
@@ -10,29 +10,33 @@ repository = "https://github.com/Esgrove/rust-axum-example"
 build = "build.rs"
 
 [build-dependencies]
-shadow-rs = "0.30.0"
+shadow-rs = "0.34.0"
 
 [dependencies]
-anyhow = "1.0.86"
-axum = { version = "0.7.5", features = ["macros"] }
-chrono = "0.4.38"
-clap = { version = "4.5.11", features = ["derive"] }
+anyhow = "1.0.87"
+axum = { version = "0.7.5", features = ["http2", "macros"] }
+axum-extra = "0.9.3"
+chrono = { version = "0.4.38", features = ["serde"] }
+clap = { version = "4.5.17", features = ["derive", "env"] }
 colored = "2.1.0"
 dirs = "5.0.1"
 http-body-util = "0.1.2"
+itertools = "0.13.0"
 rand = "0.8.5"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
-shadow-rs = "0.30.0"
-tokio = { version = "1.39.1", features = ["macros", "full"] }
+rayon = "1.10.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+shadow-rs = "0.34.0"
+tokio = { version = "1.40.0", features = ["macros", "full"] }
 toml = "0.8.19"
-tower = { version = "0.4.13", features = ["util"] }
+tower = { version = "0.5.0", features = ["util"] }
 tower-http = { version = "0.5.2", features = ["timeout", "trace"] }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 utoipa = { version = "4.2.0", features = ["axum_extras"] }
 utoipa-rapidoc = { version = "4.0.0", features = ["axum"] }
 utoipa-redoc = { version = "4.0.0", features = ["axum"] }
+utoipa-scalar = { version = "0.1.0", features = ["axum"] }
 utoipa-swagger-ui = { version = "7.1.0", features = ["axum"] }
 
 [profile.dev]

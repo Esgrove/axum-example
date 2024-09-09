@@ -1,178 +1,81 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::Arc;
+use std::{env, fmt};
 
-use anyhow::anyhow;
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use axum::Json;
+use anyhow::{anyhow, Context};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::level_filters::LevelFilter;
-use utoipa::{IntoParams, ToSchema};
+use utoipa::ToSchema;
 
-use crate::build;
-
+// Thread-safe pointer to app state
 pub type SharedState = Arc<RwLock<AppState>>;
 
-/// Logging level CLI parameter
-#[derive(clap::ValueEnum, Clone, Debug)]
+// This should be stored for example in AWS Secrets Manager or similar,
+// for environment-specific API keys
+pub const DEFAULT_API_KEY: &str = "axum-api-key";
+
+/// Logging level CLI parameter.
+#[derive(clap::ValueEnum, Clone, Debug, Default)]
 pub enum LogLevel {
     Trace,
     Debug,
+    #[default]
     Info,
     Warn,
     Error,
 }
 
+/// Runtime environment enum.
+#[derive(Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Environment {
+    Production,
+    Test,
+    Development,
+    #[default]
+    Local,
+}
+
 /// Shared state that simulates a database
-#[derive(Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct AppState {
     pub db: HashMap<String, Item>,
 }
 
-/// Post payload for creating a new item
-#[derive(Debug, Clone, Deserialize, ToSchema)]
-pub struct CreateItem {
-    #[schema(example = "esgrove")]
-    pub name: String,
-    /// Optional id field, allowing clients to specify an id or have the server generate one
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<u64>,
-}
-
-/// Query item information with name
-#[derive(Debug, Clone, Deserialize, ToSchema, IntoParams)]
-pub struct ItemQuery {
-    #[schema(example = "esgrove")]
-    pub name: String,
+/// API config for passing settings to routes.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub api_key: String,
+    pub env: Environment,
 }
 
 /// Item information
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, ToSchema)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 pub struct Item {
-    /// `id` will be in range 1000..9999
     #[schema(example = "1234")]
     pub id: u64,
     #[schema(example = "esgrove")]
     pub name: String,
 }
 
-/// Simple response with a message
-#[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct MessageResponse {
-    /// Message can be either information or an error message
-    #[schema(example = "Item already exists: esgrove")]
-    pub message: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct ItemListResponse {
-    /// The total number of items
-    #[schema(example = "5")]
-    pub num_items: usize,
-    /// List of all names
-    pub names: Vec<String>,
-}
-
-/// API version information.
-#[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct VersionInfo {
-    #[schema(example = "axum-example")]
-    pub name: String,
-    #[schema(example = "0.5.0")]
-    pub version: String,
-    #[schema(example = "2024-02-14 14:42:35 +02:00")]
-    pub build_time: String,
-    #[schema(example = "main")]
-    pub branch: String,
-    #[schema(example = "ee9ec805f61944653a56a7e429b2fad03232be49")]
-    pub commit: String,
-    #[schema(example = "2024-02-14 12:42:18 +00:00")]
-    pub commit_time: String,
-    #[schema(example = "macos-aarch64")]
-    pub build_os: String,
-    #[schema(example = "rustc 1.76.0 (07dca489a 2024-02-04)")]
-    pub rust_version: String,
-    #[schema(example = "stable-aarch64-apple-darwin")]
-    pub rust_channel: String,
-}
-
-pub enum ItemResponse {
-    Found(Item),
-    Error(MessageResponse),
-}
-
-pub enum CreateItemResponse {
-    Created(Item),
-    Error(MessageResponse),
-}
-
-pub enum RemoveItemResponse {
-    Removed(Item),
-    Error(MessageResponse),
-}
-
-/// Custom error type that enables using anyhow error handling in routes.
-/// This is used for server-side errors and returns status code 500 with the error message.
-pub struct ServerError(anyhow::Error);
-
-// Tell axum how to convert `ServerError` into a response.
-impl IntoResponse for ServerError {
-    fn into_response(self) -> Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(format!("Error: {}", self.0))).into_response()
-    }
-}
-
-// This enables using `?` on functions that return `Result<_, anyhow::Error>`
-// to turn them into `Result<_, ServerError>`.
-// This way we don't need to do that manually.
-impl<E> From<E> for ServerError
-where
-    E: Into<anyhow::Error>,
-{
-    fn from(err: E) -> Self {
-        Self(err.into())
-    }
-}
-
-impl RemoveItemResponse {
-    // Accept any type that implements std::fmt::Display, not just strings.
-    pub fn new_error<T: std::fmt::Display>(message: T) -> Self {
-        RemoveItemResponse::Error(MessageResponse::new(format!("{}", message)))
-    }
-}
-
-impl IntoResponse for CreateItemResponse {
-    fn into_response(self) -> Response {
-        match self {
-            CreateItemResponse::Created(item) => (StatusCode::CREATED, Json(item)).into_response(),
-            CreateItemResponse::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
+impl AppState {
+    #[allow(unused)]
+    pub fn new() -> Self {
+        Self {
+            db: HashMap::with_capacity(8192),
         }
     }
-}
 
-impl IntoResponse for ItemResponse {
-    fn into_response(self) -> Response {
-        match self {
-            ItemResponse::Found(item) => (StatusCode::OK, Json(item)).into_response(),
-            ItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
-        }
+    pub fn new_shared_state() -> SharedState {
+        Arc::new(RwLock::new(Self::new()))
     }
-}
 
-impl IntoResponse for RemoveItemResponse {
-    fn into_response(self) -> Response {
-        match self {
-            RemoveItemResponse::Removed(item) => (StatusCode::OK, Json(item)).into_response(),
-            RemoveItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
-        }
-    }
-}
-
-impl MessageResponse {
-    pub fn new(message: String) -> MessageResponse {
-        MessageResponse { message }
+    #[allow(unused)]
+    /// Serialize to pretty json.
+    pub fn to_json_pretty(&self) -> anyhow::Result<String> {
+        serde_json::to_string_pretty(self).context("Failed to serialize state")
     }
 }
 
@@ -195,29 +98,82 @@ impl Item {
 }
 
 impl LogLevel {
-    pub fn to_filter(&self) -> LevelFilter {
+    /// Convert CLI log level to tracing log level filter
+    pub const fn to_filter(&self) -> LevelFilter {
         match self {
-            LogLevel::Trace => LevelFilter::TRACE,
-            LogLevel::Debug => LevelFilter::DEBUG,
-            LogLevel::Info => LevelFilter::INFO,
-            LogLevel::Warn => LevelFilter::WARN,
-            LogLevel::Error => LevelFilter::ERROR,
+            Self::Trace => LevelFilter::TRACE,
+            Self::Debug => LevelFilter::DEBUG,
+            Self::Info => LevelFilter::INFO,
+            Self::Warn => LevelFilter::WARN,
+            Self::Error => LevelFilter::ERROR,
         }
     }
 }
 
-impl VersionInfo {
-    pub fn from_build_info() -> VersionInfo {
-        VersionInfo {
-            name: build::PROJECT_NAME.to_string(),
-            version: build::PKG_VERSION.to_string(),
-            build_time: build::BUILD_TIME_3339.to_string(),
-            branch: build::BRANCH.to_string(),
-            commit: build::COMMIT_HASH.to_string(),
-            commit_time: build::COMMIT_DATE.to_string(),
-            build_os: build::BUILD_OS.to_string(),
-            rust_version: build::RUST_VERSION.to_string(),
-            rust_channel: build::RUST_CHANNEL.to_string(),
+impl Config {
+    #[allow(unused)]
+    pub const fn new(api_key: String, env: Environment) -> Self {
+        Self { api_key, env }
+    }
+
+    /// Try to get values from env variables or otherwise use defaults.
+    pub fn new_from_env() -> Self {
+        Self {
+            api_key: env::var("API_KEY").unwrap_or(DEFAULT_API_KEY.to_string()),
+            env: Environment::from_env(),
         }
+    }
+}
+
+impl Environment {
+    /// Try to read runtime environment from env variable or otherwise use default.
+    pub fn from_env() -> Self {
+        env::var("API_ENV").map_or_else(|_| Self::default(), |value| Self::from_str(&value).unwrap_or_default())
+    }
+}
+
+impl FromStr for Environment {
+    type Err = anyhow::Error;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "K_DEVELOPMENT" => Ok(Self::Development),
+            "K_PRODUCTION" => Ok(Self::Production),
+            "K_TEST" => Ok(Self::Test),
+            "K_LOCAL" => Ok(Self::Local),
+            _ => Err(anyhow::anyhow!("Invalid environment value: '{input}'")),
+        }
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            api_key: DEFAULT_API_KEY.to_string(),
+            env: Environment::default(),
+        }
+    }
+}
+
+impl fmt::Display for Environment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Production => {
+                    "PRODUCTION"
+                }
+                Self::Test => {
+                    "TEST"
+                }
+                Self::Development => {
+                    "DEVELOPMENT"
+                }
+                Self::Local => {
+                    "LOCAL"
+                }
+            }
+        )
     }
 }

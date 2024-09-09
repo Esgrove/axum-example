@@ -1,12 +1,15 @@
+use std::sync::Arc;
+
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{
     extract::{Path, State},
     routing::delete,
-    Json, Router,
+    Extension, Json, Router,
 };
 
-use crate::types::{MessageResponse, RemoveItemResponse, SharedState};
+use crate::schemas::{ApiKeyExtractor, MessageResponse, RemoveItemResponse};
+use crate::types::{Config, SharedState};
 
 /// Create admin routes.
 /// Helper method to easily nest all admin routes under common prefix.
@@ -21,11 +24,19 @@ pub fn admin_routes() -> Router<SharedState> {
 #[utoipa::path(
     delete,
     path = "/admin/clear_items",
+    security(
+        ("api_key" = [])
+    ),
     responses(
-    (status = 200, body = [MessageResponse], description = "Report number of items deleted")
+        (status = 200, body = [MessageResponse], description = "Report number of items deleted"),
+        (status = UNAUTHORIZED, body = [AuthErrorResponse], description = "Unauthorized"),
     )
 )]
-async fn delete_all_items(State(state): State<SharedState>) -> impl IntoResponse {
+async fn delete_all_items(
+    _api_key: ApiKeyExtractor,
+    State(state): State<SharedState>,
+    Extension(_config): Extension<Arc<Config>>,
+) -> impl IntoResponse {
     let mut state = state.write().await;
     let number_of_items = state.db.len();
     tracing::info!("Delete all {number_of_items} items");
@@ -41,12 +52,21 @@ async fn delete_all_items(State(state): State<SharedState>) -> impl IntoResponse
 #[utoipa::path(
     delete,
     path = "/admin/remove/:name",
+    security(
+        ("api_key" = [])
+    ),
     responses(
-    (status = OK, body = [Item], description = "Item removed"),
-    (status = NOT_FOUND, body = [MessageResponse], description = "Item does not exist")
+        (status = OK, body = [Item], description = "Item removed"),
+        (status = NOT_FOUND, body = [MessageResponse], description = "Item does not exist"),
+        (status = UNAUTHORIZED, body = [AuthErrorResponse], description = "Unauthorized"),
     )
 )]
-async fn remove_item(Path(name): Path<String>, State(state): State<SharedState>) -> impl IntoResponse {
+async fn remove_item(
+    _api_key: ApiKeyExtractor,
+    State(state): State<SharedState>,
+    Extension(_config): Extension<Arc<Config>>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
     let mut state = state.write().await;
     match state.db.remove(&name) {
         Some(existing_item) => {
