@@ -16,6 +16,7 @@ use crate::types::{Config, Item};
 pub static VERSION_INFO: VersionInfo = VersionInfo {
     name: build::PROJECT_NAME,
     version: build::PKG_VERSION,
+    deploy_tag: build::DEPLOYMENT_TAG,
     build_time: build::BUILD_TIME_3339,
     branch: build::BRANCH,
     commit: build::COMMIT_HASH,
@@ -66,6 +67,8 @@ pub struct VersionInfo {
     pub name: &'static str,
     #[schema(example = "1.0.0")]
     pub version: &'static str,
+    #[schema(example = "2024.02.14-100")]
+    pub deploy_tag: &'static str,
     #[schema(example = "2024-02-14 14:42:35 +02:00")]
     pub build_time: &'static str,
     #[schema(example = "main")]

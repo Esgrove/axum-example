@@ -40,7 +40,7 @@ use crate::routing::routes;
 use crate::schemas::VERSION_INFO;
 use crate::types::{AppState, Config, Environment, LogLevel, SharedState};
 
-// Get build information
+// Make compile time build information available
 shadow!(build);
 
 #[derive(Parser)]
