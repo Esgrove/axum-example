@@ -86,7 +86,11 @@ pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<Share
     request_body = CreateItem,
     responses(
         (status = CREATED, body = [Item], description = "New item created"),
-        (status = CONFLICT, body = [MessageResponse], description = "Item already exists")
+        (status = CONFLICT, body = [MessageResponse], description = "Item already exists"),
+        (status = BAD_REQUEST, body = [RejectionErrorResponse], description = "Malformed JSON data"),
+        (status = UNPROCESSABLE_ENTITY, body = [RejectionErrorResponse], description = "JSON deserialization error"),
+        (status = UNSUPPORTED_MEDIA_TYPE, body = [RejectionErrorResponse], description = "Missing JSON content type header"),
+        (status = PAYLOAD_TOO_LARGE, body = [RejectionErrorResponse], description = "Too many bytes"),
     )
 )]
 pub async fn create_item(
@@ -114,11 +118,12 @@ pub async fn create_item(
     Ok(CreateItemResponse::Created(item))
 }
 
-/// List all items
+/// List all items.
+// TODO: add optional parameters like skip and limit
 #[axum::debug_handler]
 #[utoipa::path(
     get,
-    path = "/list_items",
+    path = "/items",
     responses(
         (status = 200, body = [ItemListResponse])
     )

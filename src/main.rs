@@ -218,7 +218,7 @@ fn build_router(shared_state: &SharedState, config: &Arc<Config>) -> Router {
         .route("/", get(routes::root))
         .route("/version", get(routes::version))
         .route("/item", get(routes::query_item))
-        .route("/list_items", get(routes::list_items))
+        .route("/items", get(routes::list_items))
         .route("/items", post(routes::create_item))
         // Put all admin routes under /admin
         .nest("/admin", admin::admin_routes())
@@ -266,6 +266,7 @@ mod tests {
     use serde_json::Value;
     use tower::ServiceExt;
 
+    use crate::schemas::ItemListResponse;
     use crate::types::AppState;
     use crate::types::Item;
 
@@ -366,6 +367,83 @@ mod tests {
             .expect("Failed to get response");
 
         assert_eq!(response.status(), StatusCode::CONFLICT);
+    }
+
+    #[tokio::test]
+    async fn list_items() {
+        let shared_state = AppState::new_shared_state();
+        let config = Arc::new(Config::default());
+        let app = build_router(&shared_state, &config);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/items")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("Failed to get response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("Failed to get body bytes")
+            .to_bytes();
+
+        assert!(!body.is_empty());
+
+        let item_list: ItemListResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(item_list.num_items, 0);
+        assert!(item_list.names.is_empty());
+
+        let item_json = r#"{"name": "test"}"#;
+        let app = build_router(&shared_state, &config);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/items")
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(item_json))
+                    .unwrap(),
+            )
+            .await
+            .expect("Failed to get response");
+
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let app = build_router(&shared_state, &config);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/items")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .expect("Failed to get response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("Failed to get body bytes")
+            .to_bytes();
+
+        assert!(!body.is_empty());
+
+        let item_list: ItemListResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(item_list.num_items, 1);
+        assert!(!item_list.names.is_empty());
     }
 
     #[tokio::test]

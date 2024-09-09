@@ -190,7 +190,7 @@ print_magenta "Testing routes..."
 
 get "$URL:$PORT"
 get "$URL:$PORT/version"
-get "$URL:$PORT/list_items"
+get "$URL:$PORT/items"
 post "$URL:$PORT/items" '{"name":"esgrove"}'
 get "$URL:$PORT/item?name=esgrove"
 post "$URL:$PORT/items" '{"name":"esgrove"}'
@@ -202,7 +202,7 @@ for name in pizzalover9000 akseli swanson; do
     post "$URL:$PORT/items" "{\"name\":\"$name\"}"
 done
 
-get "$URL:$PORT/list_items"
+get "$URL:$PORT/items"
 
 # Trying to use GET with admin routes results in 405 "Method Not Allowed"
 get "$URL:$PORT/admin/remove/pizzalover"
@@ -213,11 +213,11 @@ delete "$URL:$PORT/admin/remove/pizzalover"
 delete "$URL:$PORT/admin/remove/pizzalover" "$API_KEY"
 delete "$URL:$PORT/admin/remove/pizzalover9000" "$API_KEY"
 
-get "$URL:$PORT/list_items"
+get "$URL:$PORT/items"
 
 delete "$URL:$PORT/admin/clear_items" "$API_KEY"
 
-get "$URL:$PORT/list_items"
+get "$URL:$PORT/items"
 
 if [ "$TIMING" = true ]; then
     calculate_averages
