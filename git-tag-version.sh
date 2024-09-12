@@ -70,7 +70,7 @@ for commit_hash in $(git log --format="%H" --reverse -- Cargo.toml); do
             if git tag -l | grep -q "^${tag}$"; then
                 print_red "Tag $tag already exists, skipping..."
             else
-                run_command git tag -a "$tag" "$commit_hash" -m "Rust version $version_number"
+                run_command git tag -a "$tag" "$commit_hash" -m "Version $version_number"
             fi
             if [ "$PUSH" = true ]; then
                 run_command git push origin "$tag"
