@@ -39,7 +39,7 @@ async fn delete_all_items(
 ) -> impl IntoResponse {
     let mut state = state.write().await;
     let number_of_items = state.db.len();
-    tracing::info!("Delete all {number_of_items} items");
+    tracing::debug!("Delete all {number_of_items} items");
     state.db.clear();
     (
         StatusCode::OK,
@@ -70,7 +70,7 @@ async fn remove_item(
     let mut state = state.write().await;
     match state.db.remove(&name) {
         Some(existing_item) => {
-            tracing::info!("Remove item: {}", name);
+            tracing::debug!("Remove item: {}", name);
             RemoveItemResponse::Removed(existing_item.clone())
         }
         None => {

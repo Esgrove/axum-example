@@ -61,7 +61,7 @@ pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
     )
 )]
 pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
-    tracing::info!("Query item: {}", item.name);
+    tracing::debug!("Query item: {}", item.name);
     let state = state.read().await;
     match state.db.get(&item.name) {
         Some(existing_item) => {
@@ -114,7 +114,7 @@ pub async fn create_item(
     };
     // TODO: should probably ensure ids are unique too
     state.db.insert(item.name.clone(), item.clone());
-    tracing::info!("Create item: {}", item.name);
+    tracing::debug!("Create item: {}", item.name);
     Ok(CreateItemResponse::Created(item))
 }
 
