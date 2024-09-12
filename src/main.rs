@@ -4,7 +4,7 @@
 //! cargo run --release
 //! ```
 
-mod config;
+mod file_config;
 mod schemas;
 mod types;
 mod utils;
@@ -34,7 +34,7 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::config::FileConfig;
+use crate::file_config::FileConfig;
 use crate::routing::admin;
 use crate::routing::routes;
 use crate::schemas::VERSION_INFO;
@@ -63,7 +63,7 @@ struct Args {
     version: bool,
 }
 
-/// OpenAPI documentation
+/// `OpenAPI` documentation
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),
@@ -89,7 +89,7 @@ struct Args {
 )]
 pub struct ApiDoc;
 
-/// Document api key in OpenAPI specs.
+/// Document api key in `OpenAPI` specs.
 struct SecurityAddon;
 
 impl Modify for SecurityAddon {
@@ -201,18 +201,17 @@ async fn periodic_history_log(state: SharedState, interval_seconds: u64) {
     let mut interval = tokio::time::interval(Duration::from_secs(interval_seconds));
     loop {
         interval.tick().await;
-        {
-            let state = state.read().await;
-            let num_keys = state.db.len();
-            let capacity = state.db.capacity();
-            // TODO: print more statistics / info
-            tracing::info!("db items: {num_keys}");
-            tracing::info!("db capacity: {capacity}");
-        }
+        let state = state.read().await;
+        let num_keys = state.db.len();
+        let capacity = state.db.capacity();
+        drop(state);
+        // TODO: print more statistics / info
+        tracing::info!("db items: {num_keys}");
+        tracing::info!("db capacity: {capacity}");
     }
 }
 
-/// Create Router app with routes
+/// Create Router app with routes and `OpenAPI` documentation.
 fn build_router(shared_state: &SharedState, config: &Arc<Config>) -> Router {
     let router = Router::new()
         .route("/", get(routes::root))
@@ -221,7 +220,7 @@ fn build_router(shared_state: &SharedState, config: &Arc<Config>) -> Router {
         .route("/items", get(routes::list_items))
         .route("/items", post(routes::create_item))
         // Put all admin routes under /admin
-        .nest("/admin", admin::admin_routes())
+        .nest("/admin", admin::routes())
         .layer(
             ServiceBuilder::new()
                 // Pass config with api key and env to routes

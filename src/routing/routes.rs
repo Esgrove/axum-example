@@ -63,17 +63,14 @@ pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
 pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
     tracing::debug!("Query item: {}", item.name);
     let state = state.read().await;
-    match state.db.get(&item.name) {
-        Some(existing_item) => {
-            tracing::info!("{:?}", existing_item);
-            ItemResponse::Found(existing_item.clone())
-        }
-        None => {
-            tracing::error!("Item not found: {}", item.name);
-            ItemResponse::Error(MessageResponse {
-                message: format!("Item does not exist: {}", item.name),
-            })
-        }
+    if let Some(existing_item) = state.db.get(&item.name) {
+        tracing::info!("{:?}", existing_item);
+        ItemResponse::Found(existing_item.clone())
+    } else {
+        tracing::error!("Item not found: {}", item.name);
+        ItemResponse::Error(MessageResponse {
+            message: format!("Item does not exist: {}", item.name),
+        })
     }
 }
 
@@ -97,14 +94,15 @@ pub async fn create_item(
     State(state): State<SharedState>,
     WithRejection(Json(payload), _): WithRejection<Json<CreateItem>, RejectionError>,
 ) -> Result<CreateItemResponse, ServerError> {
-    let mut state = state.write().await;
-    if state.db.contains_key(&payload.name) {
+    let read_state = state.read().await;
+    if read_state.db.contains_key(&payload.name) {
         tracing::error!("Item already exists: {}", payload.name);
         return Ok(CreateItemResponse::Error(MessageResponse::new(format!(
             "Item already exists: {}",
             payload.name
         ))));
     }
+    drop(read_state);
     // Check if id was provided by client
     let item = match payload.id {
         // Creating item with client provided id can fail if id is not valid,
@@ -113,7 +111,9 @@ pub async fn create_item(
         _ => Item::new_with_random_id(payload.name),
     };
     // TODO: should probably ensure ids are unique too
-    state.db.insert(item.name.clone(), item.clone());
+    let mut write_state = state.write().await;
+    write_state.db.insert(item.name.clone(), item.clone());
+    drop(write_state);
     tracing::debug!("Create item: {}", item.name);
     Ok(CreateItemResponse::Created(item))
 }
@@ -130,8 +130,14 @@ pub async fn create_item(
 )]
 pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<ItemListResponse>) {
     tracing::debug!("List items");
-    let state = state.read().await;
-    let names: Vec<String> = state.db.keys().map(|key| key.to_string()).collect();
+    let names: Vec<String> = state
+        .read()
+        .await
+        .db
+        .keys()
+        .map(std::string::ToString::to_string)
+        .collect();
+
     let num_items = names.len();
     tracing::debug!("List items: found {num_items} items");
     (StatusCode::OK, Json(ItemListResponse { num_items, names }))

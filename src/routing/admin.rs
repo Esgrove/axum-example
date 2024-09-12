@@ -13,7 +13,7 @@ use crate::types::{Config, SharedState};
 
 /// Create admin routes.
 /// Helper method to easily nest all admin routes under common prefix.
-pub fn admin_routes() -> Router<SharedState> {
+pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/clear_items", delete(delete_all_items))
         .route("/remove/:name", delete(remove_item))
@@ -39,8 +39,9 @@ async fn delete_all_items(
 ) -> impl IntoResponse {
     let mut state = state.write().await;
     let number_of_items = state.db.len();
-    tracing::debug!("Delete all {number_of_items} items");
     state.db.clear();
+    drop(state);
+    tracing::debug!("Delete all {number_of_items} items");
     (
         StatusCode::OK,
         Json(MessageResponse::new(format!("Removed {number_of_items} items"))),
@@ -68,14 +69,14 @@ async fn remove_item(
     Path(name): Path<String>,
 ) -> impl IntoResponse {
     let mut state = state.write().await;
-    match state.db.remove(&name) {
-        Some(existing_item) => {
-            tracing::debug!("Remove item: {}", name);
-            RemoveItemResponse::Removed(existing_item.clone())
-        }
-        None => {
+    state.db.remove(&name).map_or_else(
+        || {
             tracing::error!("Remove item failed for non-existing name: {}", name);
-            RemoveItemResponse::new_error(format!("Item does not exist: {}", name))
-        }
-    }
+            RemoveItemResponse::new_error(format!("Item does not exist: {name}"))
+        },
+        |existing_item| {
+            tracing::debug!("Remove item: {}", name);
+            RemoveItemResponse::Removed(existing_item)
+        },
+    )
 }

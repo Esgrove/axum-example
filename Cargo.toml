@@ -54,3 +54,5 @@ unsafe_code = "forbid"
 # https://rust-lang.github.io/rust-clippy/master/index.html
 enum_glob_use = "deny"
 unwrap_used = "deny"
+nursery = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }

@@ -82,18 +82,18 @@ impl AppState {
 impl Item {
     /// Try to create new Item with given name and id.
     /// Returns Err if id is not valid.
-    pub fn new(name: String, id: u64) -> anyhow::Result<Item> {
-        if !(1000..=10000).contains(&id) {
-            Err(anyhow!("ID must be between 1000 and 9999"))
+    pub fn new(name: String, id: u64) -> anyhow::Result<Self> {
+        if (1000..=10000).contains(&id) {
+            Ok(Self { id, name })
         } else {
-            Ok(Item { name, id })
+            Err(anyhow!("ID must be between 1000 and 9999"))
         }
     }
 
-    pub fn new_with_random_id(name: String) -> Item {
+    pub fn new_with_random_id(name: String) -> Self {
         let mut rng = rand::thread_rng();
         let id: u64 = rng.gen_range(1000..=9999);
-        Item { name, id }
+        Self { id, name }
     }
 }
 
@@ -119,7 +119,7 @@ impl Config {
     /// Try to get values from env variables or otherwise use defaults.
     pub fn new_from_env() -> Self {
         Self {
-            api_key: env::var("API_KEY").unwrap_or(DEFAULT_API_KEY.to_string()),
+            api_key: env::var("API_KEY").unwrap_or_else(|_| DEFAULT_API_KEY.to_string()),
             env: Environment::from_env(),
         }
     }

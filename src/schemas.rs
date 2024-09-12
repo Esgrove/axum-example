@@ -184,15 +184,15 @@ impl AuthErrorResponse {
 impl RemoveItemResponse {
     // Accept any type that implements std::fmt::Display, not just strings.
     pub fn new_error<T: std::fmt::Display>(message: T) -> Self {
-        RemoveItemResponse::Error(MessageResponse::new(format!("{}", message)))
+        Self::Error(MessageResponse::new(format!("{message}")))
     }
 }
 
 impl IntoResponse for CreateItemResponse {
     fn into_response(self) -> Response {
         match self {
-            CreateItemResponse::Created(item) => (StatusCode::CREATED, Json(item)).into_response(),
-            CreateItemResponse::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
+            Self::Created(item) => (StatusCode::CREATED, Json(item)).into_response(),
+            Self::Error(message) => (StatusCode::CONFLICT, Json(message)).into_response(),
         }
     }
 }
@@ -200,8 +200,8 @@ impl IntoResponse for CreateItemResponse {
 impl IntoResponse for ItemResponse {
     fn into_response(self) -> Response {
         match self {
-            ItemResponse::Found(item) => (StatusCode::OK, Json(item)).into_response(),
-            ItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
+            Self::Found(item) => (StatusCode::OK, Json(item)).into_response(),
+            Self::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
         }
     }
 }
@@ -209,8 +209,8 @@ impl IntoResponse for ItemResponse {
 impl IntoResponse for RemoveItemResponse {
     fn into_response(self) -> Response {
         match self {
-            RemoveItemResponse::Removed(item) => (StatusCode::OK, Json(item)).into_response(),
-            RemoveItemResponse::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
+            Self::Removed(item) => (StatusCode::OK, Json(item)).into_response(),
+            Self::Error(message) => (StatusCode::NOT_FOUND, Json(message)).into_response(),
         }
     }
 }
