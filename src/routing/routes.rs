@@ -15,7 +15,8 @@ use crate::types::{Item, SharedState};
 // Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
 
-/// Returns a simple JSON response with API name together with the current date and time.
+/// Return API name with the current date and time.
+///
 /// Used primarily as a health check to verify the API is up and responding.
 #[axum::debug_handler]
 #[utoipa::path(
@@ -34,7 +35,7 @@ pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     )
 }
 
-/// Return version and build information for the API.
+/// Return version and build information.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
@@ -49,6 +50,7 @@ pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
 }
 
 /// Get item info.
+///
 /// Example for using query parameters.
 #[axum::debug_handler]
 #[utoipa::path(
@@ -75,6 +77,7 @@ pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<Share
 }
 
 /// Create new item.
+///
 /// Example for doing post with data.
 #[axum::debug_handler]
 #[utoipa::path(

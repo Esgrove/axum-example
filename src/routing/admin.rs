@@ -11,6 +11,7 @@ use crate::schemas::{ApiKeyExtractor, AuthErrorResponse, MessageResponse, Remove
 use crate::types::{Config, Item, SharedState};
 
 /// Create admin routes.
+///
 /// Helper method to easily nest all admin routes under common prefix.
 pub fn routes() -> Router<SharedState> {
     Router::new()
@@ -47,7 +48,6 @@ async fn delete_all_items(
     )
 }
 
-/// Try to remove item with given name.
 #[axum::debug_handler]
 #[utoipa::path(
     delete,
@@ -61,6 +61,7 @@ async fn delete_all_items(
         (status = UNAUTHORIZED, body = [AuthErrorResponse], description = "Unauthorized"),
     )
 )]
+/// Remove item with given name.
 async fn remove_item(
     _api_key: ApiKeyExtractor,
     State(state): State<SharedState>,
