@@ -17,8 +17,6 @@ OPTIONS: All options are optional
     -v | --verbose
         Display commands being executed."
 
-UPLOAD=false
-PREBUILD=false
 while [ $# -gt 0 ]; do
     case "$1" in
         -h | --help)
@@ -34,7 +32,6 @@ done
 cd "$REPO_ROOT"
 
 DOCKER_IMAGE="axum-runtime"
-
 GIT_HASH=$(git rev-parse --short HEAD)
 TIMESTAMP=$(date "+%Y-%m-%d")
 TAG="${TIMESTAMP}-${GIT_HASH}"
@@ -53,10 +50,9 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 print_magenta "Building Docker image..."
-export DEPLOYMENT_TAG="$(date '+%Y.%m.%d')-local"
 docker build \
     --pull \
-    --build-arg DEPLOYMENT_TAG="$DEPLOYMENT_TAG" \
+    --build-arg DEPLOYMENT_TAG="$TAG" \
     --tag "$DOCKER_IMAGE":latest \
     --target "$DOCKER_IMAGE" \
     --file Dockerfile .
