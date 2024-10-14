@@ -13,6 +13,6 @@ updates:
 
   # Rust
   - package-ecosystem: "cargo"
-    directory: "/rust"
+    directory: "/"
     schedule:
       interval: "daily"
