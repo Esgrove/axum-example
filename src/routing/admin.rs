@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
+use axum::extract::{Extension, Json};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::{
-    extract::{Path, State},
-    routing::delete,
-    Extension, Json, Router,
-};
+use axum::routing::delete;
+use axum::Router;
 
-use crate::schemas::{ApiKeyExtractor, MessageResponse, RemoveItemResponse};
-use crate::types::{Config, SharedState};
+use crate::schemas::{ApiKeyExtractor, AuthErrorResponse, MessageResponse, RemoveItemResponse};
+use crate::types::{Config, Item, SharedState};
 
 /// Create admin routes.
 /// Helper method to easily nest all admin routes under common prefix.

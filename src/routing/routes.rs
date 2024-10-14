@@ -8,7 +8,7 @@ use chrono::{SecondsFormat, Utc};
 use crate::build;
 use crate::schemas::{
     CreateItem, CreateItemResponse, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, RejectionError,
-    ServerError, VersionInfo, VERSION_INFO,
+    RejectionErrorResponse, ServerError, VersionInfo, VERSION_INFO,
 };
 use crate::types::{Item, SharedState};
 

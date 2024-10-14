@@ -76,16 +76,6 @@ struct Args {
         admin::delete_all_items,
         admin::remove_item,
     ),
-    components(schemas(
-        schemas::CreateItem,
-        schemas::ItemListResponse,
-        schemas::AuthErrorResponse,
-        schemas::RejectionErrorResponse,
-        schemas::ItemQuery,
-        schemas::MessageResponse,
-        schemas::VersionInfo,
-        types::Item,
-    ))
 )]
 pub struct ApiDoc;
 
