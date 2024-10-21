@@ -25,7 +25,7 @@ itertools = "0.13.0"
 rand = "0.8.5"
 rayon = "1.10.0"
 serde = { version = "1.0.210", features = ["derive"] }
-serde_json = "1.0.131"
+serde_json = "1.0.132"
 shadow-rs = "0.35.1"
 tokio = { version = "1.40.0", features = ["macros", "full"] }
 toml = "0.8.19"
