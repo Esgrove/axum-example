@@ -13,7 +13,7 @@ build = "build.rs"
 shadow-rs = "0.35.1"
 
 [dependencies]
-anyhow = "1.0.90"
+anyhow = "1.0.91"
 axum = { version = "0.7.7", features = ["http2", "macros"] }
 axum-extra = "0.9.4"
 chrono = { version = "0.4.38", features = ["serde"] }
