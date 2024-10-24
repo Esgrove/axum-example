@@ -37,7 +37,7 @@ utoipa = { version = "5.1.2", features = ["axum_extras"] }
 utoipa-rapidoc = { version = "5.0.0", features = ["axum"] }
 utoipa-redoc = { version = "5.0.0", features = ["axum"] }
 utoipa-scalar = { version = "0.2.0", features = ["axum"] }
-utoipa-swagger-ui = { version = "8.0.2", features = ["axum"] }
+utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
 
 [profile.dev]
 incremental = true
