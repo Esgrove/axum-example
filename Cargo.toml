@@ -33,7 +33,7 @@ tower = { version = "0.5.1", features = ["util"] }
 tower-http = { version = "0.6.1", features = ["timeout", "trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
-utoipa = { version = "5.1.2", features = ["axum_extras"] }
+utoipa = { version = "5.1.3", features = ["axum_extras"] }
 utoipa-rapidoc = { version = "5.0.0", features = ["axum"] }
 utoipa-redoc = { version = "5.0.0", features = ["axum"] }
 utoipa-scalar = { version = "0.2.0", features = ["axum"] }
