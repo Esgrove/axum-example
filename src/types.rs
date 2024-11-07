@@ -137,10 +137,10 @@ impl FromStr for Environment {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "K_DEVELOPMENT" => Ok(Self::Development),
-            "K_PRODUCTION" => Ok(Self::Production),
-            "K_TEST" => Ok(Self::Test),
-            "K_LOCAL" => Ok(Self::Local),
+            "DEVELOPMENT" => Ok(Self::Development),
+            "PRODUCTION" => Ok(Self::Production),
+            "TEST" => Ok(Self::Test),
+            "LOCAL" => Ok(Self::Local),
             _ => Err(anyhow::anyhow!("Invalid environment value: '{input}'")),
         }
     }
