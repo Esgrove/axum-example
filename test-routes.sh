@@ -204,10 +204,10 @@ done
 
 get "$URL:$PORT/items"
 
-# Trying to use GET with admin routes results in 405 "Method Not Allowed"
+print_yellow 'Using GET with admin routes results in 405 "Method Not Allowed":'
 get "$URL:$PORT/admin/remove/pizzalover"
 
-# Admin routes require api key
+print_yellow "Admin routes require api key:"
 delete "$URL:$PORT/admin/remove/pizzalover"
 
 delete "$URL:$PORT/admin/remove/pizzalover" "$API_KEY"
