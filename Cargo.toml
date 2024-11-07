@@ -2,7 +2,7 @@
 name = "axum-example"
 version = "0.9.3"
 edition = "2021"
-description = "Rust Axum REST API example."
+description = "Axum API example"
 authors = ["Esgrove <esgrove@outlook.com>"]
 license = "MIT"
 readme = "README.md"
@@ -20,7 +20,6 @@ chrono = { version = "0.4.38", features = ["serde"] }
 clap = { version = "4.5.20", features = ["derive", "env"] }
 colored = "2.1.0"
 dirs = "5.0.1"
-http-body-util = "0.1.2"
 itertools = "0.13.0"
 rand = "0.8.5"
 rayon = "1.10.0"
@@ -38,6 +37,9 @@ utoipa-rapidoc = { version = "5.0.0", features = ["axum"] }
 utoipa-redoc = { version = "5.0.0", features = ["axum"] }
 utoipa-scalar = { version = "0.2.0", features = ["axum"] }
 utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
+
+[dev-dependencies]
+http-body-util = "0.1.2"
 
 [profile.dev]
 incremental = true
