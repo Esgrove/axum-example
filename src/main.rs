@@ -1,8 +1,7 @@
-//! Run server locally with
+//! Main.
 //!
-//! ```not_rust
-//! cargo run --release
-//! ```
+//! Handle CLI arguments and run API.
+//!
 
 mod file_config;
 mod schemas;
@@ -191,10 +190,8 @@ async fn periodic_history_log(state: SharedState, interval_seconds: u64) {
     let mut interval = tokio::time::interval(Duration::from_secs(interval_seconds));
     loop {
         interval.tick().await;
-        let state = state.read().await;
         let num_keys = state.db.len();
         let capacity = state.db.capacity();
-        drop(state);
         // TODO: print more statistics / info
         tracing::info!("db items: {num_keys}");
         tracing::info!("db capacity: {capacity}");

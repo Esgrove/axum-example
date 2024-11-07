@@ -1,3 +1,8 @@
+//! Admin Routes.
+//!
+//! Admin routes that require an api key to use.
+//!
+
 use std::sync::Arc;
 
 use axum::extract::{Extension, Json};
@@ -7,8 +12,8 @@ use axum::response::IntoResponse;
 use axum::routing::delete;
 use axum::Router;
 
-use crate::schemas::{ApiKeyExtractor, AuthErrorResponse, MessageResponse, RemoveItemResponse};
-use crate::types::{Config, Item, SharedState};
+use crate::schemas::{AuthErrorResponse, MessageResponse, RemoveItemResponse};
+use crate::types::{ApiKeyExtractor, Config, Item, SharedState};
 
 /// Create admin routes.
 ///
@@ -37,10 +42,8 @@ async fn delete_all_items(
     State(state): State<SharedState>,
     Extension(_config): Extension<Arc<Config>>,
 ) -> impl IntoResponse {
-    let mut state = state.write().await;
     let number_of_items = state.db.len();
     state.db.clear();
-    drop(state);
     tracing::debug!("Delete all {number_of_items} items");
     (
         StatusCode::OK,
@@ -68,7 +71,6 @@ async fn remove_item(
     Extension(_config): Extension<Arc<Config>>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let mut state = state.write().await;
     state.db.remove(&name).map_or_else(
         || {
             tracing::error!("Remove item failed for non-existing name: {}", name);
@@ -76,7 +78,7 @@ async fn remove_item(
         },
         |existing_item| {
             tracing::debug!("Remove item: {}", name);
-            RemoveItemResponse::Removed(existing_item)
+            RemoveItemResponse::Removed(existing_item.1)
         },
     )
 }

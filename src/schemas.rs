@@ -1,17 +1,20 @@
+//! Schemas.
+//!
+//! Contains type definitions for all public-facing types,
+//! meaning everything that shows up in the `OpenAPI` documentation.
+//!
+
 use std::fmt;
-use std::sync::Arc;
 
 use axum::extract::rejection::JsonRejection;
-use axum::extract::FromRequestParts;
-use axum::http::request::Parts;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::{async_trait, Json};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 use crate::build;
-use crate::types::{Config, Item};
+use crate::types::Item;
 
 pub static VERSION_INFO: VersionInfo = VersionInfo {
     name: build::PROJECT_NAME,
@@ -108,38 +111,6 @@ pub struct RejectionError {
 /// Custom error type that enables using anyhow error handling in routes.
 /// This is used for server-side errors and returns status code 500 with the error message.
 pub struct ServerError(pub anyhow::Error);
-
-/// Custom extractor for checking api key.
-/// Note: requires the Config extension to be present in the route as well,
-/// so the correct api key can be accessed.
-pub struct ApiKeyExtractor;
-
-#[async_trait]
-impl<S> FromRequestParts<S> for ApiKeyExtractor
-where
-    S: Send + Sync,
-{
-    type Rejection = AuthErrorResponse;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let config = parts
-            .extensions
-            .get::<Arc<Config>>()
-            .ok_or_else(|| AuthErrorResponse::new_from_str("Config extension missing from route"))?;
-
-        match parts.headers.get("api-key").and_then(|key| key.to_str().ok()) {
-            Some(api_key) if api_key == config.api_key => Ok(Self),
-            Some(api_key) => {
-                tracing::warn!("Invalid API key: {} {}", parts.method.as_str(), parts.uri.path());
-                Err(AuthErrorResponse::new(format!("Invalid API key: '{api_key}'")))
-            }
-            None => {
-                tracing::warn!("Missing API key header: {} {}", parts.method.as_str(), parts.uri.path());
-                Err(AuthErrorResponse::new_from_str("Missing api-key header"))
-            }
-        }
-    }
-}
 
 pub enum ItemResponse {
     Found(Item),

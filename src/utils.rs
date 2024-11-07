@@ -1,3 +1,8 @@
+//! Utils.
+//!
+//! Helper and utility functions.
+//!
+
 use colored::{ColoredString, Colorize};
 use tokio::signal;
 

@@ -1,3 +1,8 @@
+//! Routes.
+//!
+//! Public routes that anyone can call.
+//!
+
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -64,7 +69,6 @@ pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
 )]
 pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
     tracing::debug!("Query item: {}", item.name);
-    let state = state.read().await;
     if let Some(existing_item) = state.db.get(&item.name) {
         tracing::info!("{:?}", existing_item);
         ItemResponse::Found(existing_item.clone())
@@ -97,15 +101,13 @@ pub async fn create_item(
     State(state): State<SharedState>,
     WithRejection(Json(payload), _): WithRejection<Json<CreateItem>, RejectionError>,
 ) -> Result<CreateItemResponse, ServerError> {
-    let read_state = state.read().await;
-    if read_state.db.contains_key(&payload.name) {
+    if state.db.contains_key(&payload.name) {
         tracing::error!("Item already exists: {}", payload.name);
         return Ok(CreateItemResponse::Error(MessageResponse::new(format!(
             "Item already exists: {}",
             payload.name
         ))));
     }
-    drop(read_state);
     // Check if id was provided by client
     let item = match payload.id {
         // Creating item with client provided id can fail if id is not valid,
@@ -114,9 +116,7 @@ pub async fn create_item(
         _ => Item::new_with_random_id(payload.name),
     };
     // TODO: should probably ensure ids are unique too
-    let mut write_state = state.write().await;
-    write_state.db.insert(item.name.clone(), item.clone());
-    drop(write_state);
+    state.db.insert(item.name.clone(), item.clone());
     tracing::debug!("Create item: {}", item.name);
     Ok(CreateItemResponse::Created(item))
 }
@@ -133,14 +133,7 @@ pub async fn create_item(
 )]
 pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<ItemListResponse>) {
     tracing::debug!("List items");
-    let names: Vec<String> = state
-        .read()
-        .await
-        .db
-        .keys()
-        .map(std::string::ToString::to_string)
-        .collect();
-
+    let names: Vec<String> = state.db.iter().map(|entry| entry.key().clone()).collect();
     let num_items = names.len();
     tracing::debug!("List items: found {num_items} items");
     (StatusCode::OK, Json(ItemListResponse { num_items, names }))
