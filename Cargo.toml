@@ -15,7 +15,7 @@ shadow-rs = "0.36.0"
 [dependencies]
 anyhow = "1.0.93"
 axum = { version = "0.7.9", features = ["http2", "macros"] }
-axum-extra = "0.9.4"
+axum-extra = "0.9.6"
 chrono = { version = "0.4.38", features = ["serde"] }
 clap = { version = "4.5.21", features = ["derive", "env"] }
 colored = "2.1.0"
