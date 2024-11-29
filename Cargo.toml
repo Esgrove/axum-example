@@ -50,6 +50,10 @@ lto = true
 # https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 codegen-units = 1
 
+[package.metadata.clippy]
+# Ignore shadow.rs output
+skip-paths = ["target/"]
+
 [lints.rust]
 unsafe_code = "forbid"
 
@@ -59,3 +63,6 @@ enum_glob_use = "deny"
 unwrap_used = "deny"
 nursery = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+
+# needed for shadow.rs generated output
+empty_line_after_doc_comments = "allow"

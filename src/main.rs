@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
 
     let run_environment = Environment::from_env();
     let use_json_logging = run_environment != Environment::Local;
-    initialize_logging(&args.log, use_json_logging);
+    initialize_logging(args.log.as_ref(), use_json_logging);
 
     tracing::info!("Starting {} {}", build::PROJECT_NAME, run_environment);
     if use_json_logging {
@@ -142,10 +142,10 @@ async fn main() -> Result<()> {
 }
 
 /// Initialize tracing logging.
-fn initialize_logging(log_level: &Option<LogLevel>, use_json_format: bool) {
+fn initialize_logging(log_level: Option<&LogLevel>, use_json_format: bool) {
     // Log level filter
     let mut filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    if let Some(ref level) = log_level {
+    if let Some(level) = log_level {
         filter = filter.add_directive(level.to_filter().into());
     }
 
