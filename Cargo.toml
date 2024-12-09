@@ -16,7 +16,7 @@ shadow-rs = "0.36.0"
 anyhow = "1.0.94"
 axum = { version = "0.7.9", features = ["http2", "macros"] }
 axum-extra = "0.9.6"
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.23", features = ["derive", "env"] }
 colored = "2.1.0"
 dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
