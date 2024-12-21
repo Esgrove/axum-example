@@ -4,12 +4,15 @@ use shadow_rs::SdResult;
 use std::fs::File;
 use std::io::Write;
 
-fn main() -> SdResult<()> {
+fn main() {
     // Invalidate the build script if DEPLOYMENT_TAG changes
     println!("cargo:rerun-if-env-changed=DEPLOYMENT_TAG");
     // Generate build information
     // https://github.com/baoyachi/shadow-rs
-    shadow_rs::new_hook(hook)
+    shadow_rs::ShadowBuilder::builder()
+        .hook(hook)
+        .build()
+        .expect("Shadow build failed");
 }
 
 fn hook(file: &File) -> SdResult<()> {
