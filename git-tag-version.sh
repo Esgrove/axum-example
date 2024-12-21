@@ -21,7 +21,8 @@ OPTIONS: All options are optional
         Push tags to remote.
 
     --verbose
-        Display commands being executed."
+        Display commands being executed.
+"
 
 DRYRUN=false
 PUSH=false
