@@ -20,10 +20,11 @@ RUN DEPLOYMENT_TAG=${DEPLOYMENT_TAG} cargo build \
     mv "$(find . -path "*/release/axum-example")" axum-example && \
     file axum-example
 
-FROM ubuntu:jammy AS axum-runtime
+FROM ubuntu:latest AS axum-runtime
 RUN apt-get update && \
     apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
+
 # Copy Rust binary created in builder stage
 COPY --from=builder api/axum-example /usr/local/bin/axum-example
 # Start API
