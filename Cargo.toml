@@ -1,6 +1,6 @@
 [package]
 name = "axum-example"
-version = "0.10.1"
+version = "0.12.0"
 edition = "2021"
 description = "Axum API example"
 authors = ["Esgrove <esgrove@outlook.com>"]
@@ -14,13 +14,13 @@ shadow-rs = "0.37.0"
 
 [dependencies]
 anyhow = "1.0.95"
-axum = { version = "0.7.9", features = ["http2", "macros"] }
-axum-extra = "0.9.6"
+axum = { version = "0.8.0", features = ["http2", "macros"] }
+axum-extra = "0.10.0"
 chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.23", features = ["derive", "env"] }
-colored = "2.2.0"
+colored = "3.0.0"
 dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
-dirs = "5.0.1"
+dirs = "6.0.0"
 itertools = "0.14.0"
 rand = "0.8.5"
 rayon = "1.10.0"
@@ -33,11 +33,11 @@ tower = { version = "0.5.2", features = ["util"] }
 tower-http = { version = "0.6.2", features = ["timeout", "trace"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
-utoipa = { version = "5.3.0", features = ["axum_extras"] }
-utoipa-rapidoc = { version = "5.0.0", features = ["axum"] }
-utoipa-redoc = { version = "5.0.0", features = ["axum"] }
-utoipa-scalar = { version = "0.2.0", features = ["axum"] }
-utoipa-swagger-ui = { version = "8.1.0", features = ["axum"] }
+utoipa = { version = "5.3.1", features = ["axum_extras"] }
+utoipa-rapidoc = { version = "6.0.0", features = ["axum"] }
+utoipa-redoc = { version = "6.0.0", features = ["axum"] }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+utoipa-swagger-ui = { version = "9.0.0", features = ["axum"] }
 
 [dev-dependencies]
 # Only used in tests
