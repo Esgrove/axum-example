@@ -8,7 +8,6 @@ use std::sync::Arc;
 use std::{env, fmt};
 
 use anyhow::{anyhow, Context};
-use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use dashmap::DashMap;
@@ -193,7 +192,6 @@ impl fmt::Display for Environment {
     }
 }
 
-#[async_trait]
 /// This implements a custom Axum extractor for checking the api key in routes.
 /// `FromRequestParts` is used here since this does not need access to the request body.
 /// We only need to check the request headers for the api key.
