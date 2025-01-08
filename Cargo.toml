@@ -17,7 +17,7 @@ anyhow = "1.0.95"
 axum = { version = "0.7.9", features = ["http2", "macros"] }
 axum-extra = "0.9.6"
 chrono = { version = "0.4.39", features = ["serde"] }
-clap = { version = "4.5.23", features = ["derive", "env"] }
+clap = { version = "4.5.24", features = ["derive", "env"] }
 colored = "2.2.0"
 dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
 dirs = "5.0.1"
