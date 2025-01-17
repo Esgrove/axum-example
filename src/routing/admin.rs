@@ -21,7 +21,7 @@ use crate::types::{ApiKeyExtractor, Config, Item, SharedState};
 pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/clear_items", delete(delete_all_items))
-        .route("/remove/:name", delete(remove_item))
+        .route("/remove/{name}", delete(remove_item))
 }
 
 /// Remove all items.
@@ -54,7 +54,7 @@ async fn delete_all_items(
 #[axum::debug_handler]
 #[utoipa::path(
     delete,
-    path = "/admin/remove/:name",
+    path = "/admin/remove/{name}",
     security(
         ("api_key" = [])
     ),
