@@ -105,8 +105,7 @@ impl Item {
     }
 
     pub fn new_with_random_id(name: String) -> Self {
-        let mut rng = rand::thread_rng();
-        let id: u64 = rng.gen_range(1000..=9999);
+        let id: u64 = rand::rng().random_range(1000..=9999);
         Self { id, name }
     }
 }
