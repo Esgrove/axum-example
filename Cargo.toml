@@ -1,6 +1,6 @@
 [package]
 name = "axum-example"
-version = "0.11.0"
+version = "0.11.1"
 edition = "2021"
 description = "Axum API example"
 authors = ["Esgrove <esgrove@outlook.com>"]
@@ -14,8 +14,8 @@ shadow-rs = "0.38.0"
 
 [dependencies]
 anyhow = "1.0.95"
-axum = { version = "0.8.2", features = ["http2", "macros"] }
-axum-extra = "0.11.0"
+axum = { version = "0.8.1", features = ["http2", "macros"] }
+axum-extra = "0.10.0"
 chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.27", features = ["derive", "env"] }
 colored = "3.0.0"
