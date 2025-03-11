@@ -41,7 +41,7 @@ utoipa-swagger-ui = { version = "9.0.0", features = ["axum"] }
 
 [dev-dependencies]
 # Only used in tests
-http-body-util = "0.1.2"
+http-body-util = "0.1.3"
 
 [profile.dev]
 incremental = true
