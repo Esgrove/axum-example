@@ -10,7 +10,7 @@ repository = "https://github.com/Esgrove/rust-axum-example"
 build = "build.rs"
 
 [build-dependencies]
-shadow-rs = "1.0.1"
+shadow-rs = "1.1.1"
 
 [dependencies]
 anyhow = "1.0.97"
@@ -26,7 +26,7 @@ rand = "0.9.0"
 rayon = "1.10.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-shadow-rs = "1.0.1"
+shadow-rs = "1.1.1"
 tokio = { version = "1.44.1", features = ["macros", "full"] }
 toml = "0.8.20"
 tower = { version = "0.5.2", features = ["util"] }
