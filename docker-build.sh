@@ -15,7 +15,8 @@ OPTIONS: All options are optional
         Display these instructions.
 
     -v | --verbose
-        Display commands being executed."
+        Display commands being executed.
+"
 
 while [ $# -gt 0 ]; do
     case "$1" in

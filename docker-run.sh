@@ -20,7 +20,8 @@ OPTIONS: All options are optional
         Delete an existing container.
 
     -v | --verbose
-        Display commands being executed."
+        Display commands being executed.
+"
 
 FORCE=false
 while [ $# -gt 0 ]; do
