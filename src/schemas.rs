@@ -6,27 +6,24 @@
 
 use std::fmt;
 
+use axum::Json;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
-use crate::build;
 use crate::types::Item;
+use crate::version;
 
 pub static VERSION_INFO: VersionInfo = VersionInfo {
-    name: build::PROJECT_NAME,
-    version: build::PKG_VERSION,
-    deploy_tag: build::DEPLOYMENT_TAG,
-    build_time: build::BUILD_TIME_3339,
-    branch: build::BRANCH,
-    commit: build::COMMIT_HASH,
-    commit_time: build::COMMIT_DATE,
-    build_os: build::BUILD_OS,
-    rust_version: build::RUST_VERSION,
-    rust_channel: build::RUST_CHANNEL,
+    name: version::PACKAGE_NAME,
+    version: version::PACKAGE_VERSION,
+    deploy_tag: version::DEPLOY_TAG,
+    build_time: version::BUILD_TIME,
+    branch: version::GIT_BRANCH,
+    commit: version::GIT_COMMIT,
+    rust_version: version::RUST_VERSION,
 };
 
 /// Post payload for creating a new item
@@ -72,20 +69,14 @@ pub struct VersionInfo {
     pub version: &'static str,
     #[schema(example = "2024.02.14-100")]
     pub deploy_tag: &'static str,
-    #[schema(example = "2024-02-14 14:42:35 +02:00")]
+    #[schema(example = "2024-02-14_14:42:35")]
     pub build_time: &'static str,
     #[schema(example = "main")]
     pub branch: &'static str,
     #[schema(example = "ee9ec805f61944653a56a7e429b2fad03232be49")]
     pub commit: &'static str,
-    #[schema(example = "2024-02-14 12:42:18 +00:00")]
-    pub commit_time: &'static str,
-    #[schema(example = "macos-aarch64")]
-    pub build_os: &'static str,
     #[schema(example = "rustc 1.76.0 (07dca489a 2024-02-04)")]
     pub rust_version: &'static str,
-    #[schema(example = "stable-aarch64-apple-darwin")]
-    pub rust_channel: &'static str,
 }
 
 /// Authentication failed response.
@@ -248,19 +239,8 @@ impl VersionInfo {
              \x20 build time: {}\n\
              \x20 branch: {}\n\
              \x20 commit: {}\n\
-             \x20 commit time: {}\n\
-             \x20 build OS: {}\n\
-             \x20 rust version: {}\n\
-             \x20 rust channel: {}",
-            self.name,
-            self.version,
-            self.build_time,
-            self.branch,
-            self.commit,
-            self.commit_time,
-            self.build_os,
-            self.rust_version,
-            self.rust_channel,
+             \x20 rust version: {}",
+            self.name, self.version, self.build_time, self.branch, self.commit, self.rust_version,
         )
     }
 }
@@ -273,9 +253,6 @@ impl fmt::Display for VersionInfo {
         write!(f, "build time: {}, ", self.build_time)?;
         write!(f, "branch: {}, ", self.branch)?;
         write!(f, "commit: {}, ", self.commit)?;
-        write!(f, "commit time: {}, ", self.commit_time)?;
-        write!(f, "build OS: {}, ", self.build_os)?;
-        write!(f, "rust version: {}, ", self.rust_version)?;
-        write!(f, "rust channel: {}, ", self.rust_channel)
+        write!(f, "rust version: {}", self.rust_version)
     }
 }

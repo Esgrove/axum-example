@@ -3,19 +3,19 @@
 //! Public routes that anyone can call.
 //!
 
+use axum::Json;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::Json;
 use axum_extra::extract::WithRejection;
 use chrono::{SecondsFormat, Utc};
 
-use crate::build;
 use crate::schemas::{
     CreateItem, CreateItemResponse, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, RejectionError,
-    RejectionErrorResponse, ServerError, VersionInfo, VERSION_INFO,
+    RejectionErrorResponse, ServerError, VERSION_INFO, VersionInfo,
 };
 use crate::types::{Item, SharedState};
+use crate::version;
 
 // Debug handler macro generates better error messages during compile
 // https://docs.rs/axum-macros/latest/axum_macros/attr.debug_handler.html
@@ -36,7 +36,7 @@ pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     tracing::debug!("Root: {}", datetime);
     (
         StatusCode::OK,
-        Json(MessageResponse::new(format!("{} {}", build::PROJECT_NAME, datetime))),
+        Json(MessageResponse::new(format!("{} {}", version::PACKAGE_NAME, datetime))),
     )
 }
 
@@ -50,7 +50,7 @@ pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     )
 )]
 pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
-    tracing::debug!("Version: {}", build::PKG_VERSION);
+    tracing::debug!("Version: {}", version::PACKAGE_VERSION);
     (StatusCode::OK, Json(&VERSION_INFO))
 }
 

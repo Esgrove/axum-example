@@ -6,29 +6,9 @@
 use colored::{ColoredString, Colorize};
 use tokio::signal;
 
-use crate::build;
-
 /// Format bool value as a coloured string.
 pub fn colorize_bool(value: bool) -> ColoredString {
-    if value {
-        "true".green()
-    } else {
-        "false".yellow()
-    }
-}
-
-/// Return formatted version information string
-pub fn formatted_version_info() -> String {
-    format!(
-        "{} {} {} {} {} {} {}",
-        build::PROJECT_NAME,
-        build::PKG_VERSION,
-        build::BUILD_TIME_3339,
-        build::BRANCH,
-        build::SHORT_COMMIT,
-        build::BUILD_OS,
-        build::RUST_VERSION,
-    )
+    if value { "true".green() } else { "false".yellow() }
 }
 
 #[allow(clippy::redundant_pub_crate)]

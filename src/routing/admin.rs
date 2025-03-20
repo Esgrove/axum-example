@@ -5,12 +5,12 @@
 
 use std::sync::Arc;
 
+use axum::Router;
 use axum::extract::{Extension, Json};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::delete;
-use axum::Router;
 
 use crate::schemas::{AuthErrorResponse, MessageResponse, RemoveItemResponse};
 use crate::types::{ApiKeyExtractor, Config, Item, SharedState};

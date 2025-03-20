@@ -1,6 +1,6 @@
 use std::{env, fmt, fs, path::PathBuf};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use colored::Colorize;
 use dirs::home_dir;
 use serde::{Deserialize, Serialize};

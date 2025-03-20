@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::{env, fmt};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use dashmap::DashMap;

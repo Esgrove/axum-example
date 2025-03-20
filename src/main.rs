@@ -7,6 +7,7 @@ mod file_config;
 mod schemas;
 mod types;
 mod utils;
+mod version;
 mod routing {
     pub mod admin;
     pub mod routes;
@@ -17,10 +18,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use axum::routing::{get, post};
 use axum::Router;
-use clap::{arg, Parser};
-use shadow_rs::shadow;
+use axum::routing::{get, post};
+use clap::{Parser, arg};
 use tower::ServiceBuilder;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
@@ -38,9 +38,6 @@ use crate::routing::admin;
 use crate::routing::routes;
 use crate::schemas::VERSION_INFO;
 use crate::types::{AppState, Config, Environment, LogLevel, SharedState};
-
-// Make compile time build information available
-shadow!(build);
 
 #[derive(Parser)]
 #[command(author, about, arg_required_else_help = false, disable_version_flag = true)]
@@ -96,18 +93,15 @@ impl Modify for SecurityAddon {
 async fn main() -> Result<()> {
     let args = Args::parse();
     if args.version {
-        println!("{}", utils::formatted_version_info());
+        println!("{}", version::version_info());
         return Ok(());
     }
-
-    // Print backtrace when a panic occurs
-    std::env::set_var("RUST_BACKTRACE", "1");
 
     let run_environment = Environment::from_env();
     let use_json_logging = run_environment != Environment::Local;
     initialize_logging(args.log.as_ref(), use_json_logging);
 
-    tracing::info!("Starting {} {}", build::PROJECT_NAME, run_environment);
+    tracing::info!("Starting {} {}", version::PACKAGE_NAME, run_environment);
     if use_json_logging {
         tracing::info!("{}", VERSION_INFO);
     } else {
@@ -255,6 +249,7 @@ mod tests {
     use crate::schemas::ItemListResponse;
     use crate::types::AppState;
     use crate::types::Item;
+    use crate::version;
 
     #[tokio::test]
     async fn test_root() {
@@ -292,15 +287,12 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let body: Value = serde_json::from_slice(&body).unwrap();
 
-        assert_eq!(body["name"], build::PROJECT_NAME);
-        assert_eq!(body["version"], build::PKG_VERSION);
-        assert_eq!(body["build_time"], build::BUILD_TIME_3339);
-        assert_eq!(body["branch"], build::BRANCH);
-        assert_eq!(body["commit"], build::COMMIT_HASH);
-        assert_eq!(body["commit_time"], build::COMMIT_DATE);
-        assert_eq!(body["build_os"], build::BUILD_OS);
-        assert_eq!(body["rust_version"], build::RUST_VERSION);
-        assert_eq!(body["rust_channel"], build::RUST_CHANNEL);
+        assert_eq!(body["name"], version::PACKAGE_NAME);
+        assert_eq!(body["version"], version::PACKAGE_VERSION);
+        assert_eq!(body["build_time"], version::BUILD_TIME);
+        assert_eq!(body["branch"], version::GIT_BRANCH);
+        assert_eq!(body["commit"], version::GIT_COMMIT);
+        assert_eq!(body["rust_version"], version::RUST_VERSION);
     }
 
     #[tokio::test]
