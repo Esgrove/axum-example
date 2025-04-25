@@ -13,14 +13,9 @@ USAGE="Usage: $0 [OPTIONS]
 Run API in Docker.
 
 OPTIONS: All options are optional
-    -h | --help
-        Display these instructions.
-
-    -f | --force
-        Delete an existing container.
-
-    -v | --verbose
-        Display commands being executed.
+    -h | --help       Display these instructions.
+    -f | --force      Delete an existing container.
+    -v | --verbose    Display commands being executed.
 "
 
 FORCE=false

@@ -11,20 +11,11 @@ USAGE="Usage: $0 [OPTIONS]
 Create git version tags for a Rust project.
 
 OPTIONS: All options are optional
-    -h | --help
-        Display these instructions.
-
-    -d | --dryrun
-        Only print commands instead of executing them.
-
-    -f | --force
-        Force create tags and push if specified.
-
-    -p | --push
-        Push tags to remote.
-
-    --verbose
-        Display commands being executed.
+    -h | --help       Display these instructions.
+    -d | --dryrun     Only print commands instead of executing them.
+    -f | --force      Force create tags and push if specified.
+    -p | --push       Push tags to remote.
+    -v | --verbose    Display commands being executed.
 "
 
 DRYRUN=false

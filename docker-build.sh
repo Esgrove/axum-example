@@ -11,11 +11,8 @@ USAGE="Usage: $0 [OPTIONS]
 Build Docker image.
 
 OPTIONS: All options are optional
-    -h | --help
-        Display these instructions.
-
-    -v | --verbose
-        Display commands being executed.
+    -h | --help       Display these instructions.
+    -v | --verbose    Display commands being executed.
 "
 
 while [ $# -gt 0 ]; do

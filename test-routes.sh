@@ -11,29 +11,15 @@ USAGE="Usage: $0 [OPTIONS]
 Test API routes.
 
 OPTIONS: All options are optional
-    -h | --help
-        Display these instructions.
-
-    -k | --key [KEY]
-        API key to use.
-
-    -p | --port [NUMBER]
-        Specify port number to use. Default is 3000.
-
-    --local
-        Use config for running locally with Docker.
-
-    -u | --url [URL]
-        Specify URL to use. Default is 'http://127.0.0.1'
-
-    -t | --timing
-        Show timing information.
-
-    -s | --silent
-        Don't print responses.
-
-    -v | --verbose
-        Display commands being executed."
+    -h | --help             Display these instructions.
+    -k | --key [KEY]        API key to use.
+    -p | --port [NUMBER]    Specify port number to use. Default is 3000.
+    -l | --local            Use config for running locally with Docker.
+    -u | --url [URL]        Specify URL to use. Default is 'http://127.0.0.1'
+    -t | --timing           Show timing information.
+    -s | --silent           Don't print responses.
+    -v | --verbose          Display commands being executed.
+"
 
 TIMING=false
 SILENT=false
@@ -50,7 +36,7 @@ while [ $# -gt 0 ]; do
             PORT=$2
             shift
             ;;
-        --local)
+        -l | --local)
             PORT=80
             URL="http://127.0.0.1"
             API_KEY="axum-api-key"
