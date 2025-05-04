@@ -10,7 +10,7 @@ repository = "https://github.com/Esgrove/rust-axum-example"
 
 [dependencies]
 anyhow = "1.0.98"
-axum = { version = "0.8.3", features = [ "http2", "macros" ] }
+axum = { version = "0.8.4", features = [ "http2", "macros" ] }
 axum-extra = "0.10.1"
 chrono = { version = "0.4.41", features = [ "serde" ] }
 clap = { version = "4.5.37", features = [ "derive", "env" ] }
