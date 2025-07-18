@@ -21,7 +21,7 @@ itertools = "0.14.0"
 rand = "0.9.1"
 rayon = "1.10.0"
 serde = { version = "1.0.219", features = [ "derive" ] }
-serde_json = "1.0.140"
+serde_json = "1.0.141"
 tokio = { version = "1.46.1", features = [ "macros", "full" ] }
 toml = "0.9.2"
 tower = { version = "0.5.2", features = [ "util" ] }
