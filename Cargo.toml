@@ -1,6 +1,6 @@
 [package]
 name = "axum-example"
-version = "0.12.0"
+version = "0.12.1"
 edition = "2024"
 description = "Axum API example"
 authors = [ "Esgrove <esgrove@outlook.com>" ]
@@ -56,5 +56,7 @@ unwrap_used = "deny"
 nursery = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 
-# needed for shadow.rs generated output
+# Needed for shadow.rs generated output
 empty_line_after_doc_comments = "allow"
+# Needed for Utoipa OpenApi derive
+needless_for_each = "allow"
