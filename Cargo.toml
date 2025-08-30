@@ -27,7 +27,7 @@ toml = "0.9.5"
 tower = { version = "0.5.2", features = [ "util" ] }
 tower-http = { version = "0.6.6", features = [ "timeout", "trace" ] }
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = [ "env-filter", "json" ] }
+tracing-subscriber = { version = "0.3.20", features = [ "env-filter", "json" ] }
 utoipa = { version = "5.4.0", features = [ "axum_extras" ] }
 utoipa-rapidoc = { version = "6.0.0", features = [ "axum" ] }
 utoipa-redoc = { version = "6.0.0", features = [ "axum" ] }
