@@ -14,6 +14,7 @@ OPTIONS: All options are optional
     -h | --help       Display these instructions.
     -v | --verbose    Display commands being executed.
 "
+export USAGE
 
 while [ $# -gt 0 ]; do
     case "$1" in

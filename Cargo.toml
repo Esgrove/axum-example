@@ -1,38 +1,39 @@
 [package]
 name = "axum-example"
-version = "0.12.1"
+version = "0.12.2"
 edition = "2024"
 description = "Axum API example"
-authors = [ "Esgrove <esgrove@outlook.com>" ]
+authors = ["Esgrove <esgrove@outlook.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Esgrove/rust-axum-example"
+rust-version = "1.89.0"
 
 [dependencies]
 anyhow = "1.0.100"
-axum = { version = "0.8.4", features = [ "http2", "macros" ] }
+axum = { version = "0.8.4", features = ["http2", "macros"] }
 axum-extra = "0.10.1"
-chrono = { version = "0.4.42", features = [ "serde" ] }
-clap = { version = "4.5.48", features = [ "derive", "env" ] }
+chrono = { version = "0.4.42", features = ["serde"] }
+clap = { version = "4.5.48", features = ["derive", "env"] }
 colored = "3.0.0"
-dashmap = { version = "6.1.0", features = [ "serde", "rayon", "inline" ] }
+dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
 dirs = "6.0.0"
 itertools = "0.14.0"
 rand = "0.9.2"
 rayon = "1.11.0"
-serde = { version = "1.0.226", features = [ "derive" ] }
+serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.145"
-tokio = { version = "1.47.1", features = [ "macros", "full" ] }
+tokio = { version = "1.47.1", features = ["macros", "full"] }
 toml = "0.9.7"
-tower = { version = "0.5.2", features = [ "util" ] }
-tower-http = { version = "0.6.6", features = [ "timeout", "trace" ] }
+tower = { version = "0.5.2", features = ["util"] }
+tower-http = { version = "0.6.6", features = ["timeout", "trace"] }
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = [ "env-filter", "json" ] }
-utoipa = { version = "5.4.0", features = [ "axum_extras" ] }
-utoipa-rapidoc = { version = "6.0.0", features = [ "axum" ] }
-utoipa-redoc = { version = "6.0.0", features = [ "axum" ] }
-utoipa-scalar = { version = "0.3.0", features = [ "axum" ] }
-utoipa-swagger-ui = { version = "9.0.2", features = [ "axum" ] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
+utoipa = { version = "5.4.0", features = ["axum_extras"] }
+utoipa-rapidoc = { version = "6.0.0", features = ["axum"] }
+utoipa-redoc = { version = "6.0.0", features = ["axum"] }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 
 [dev-dependencies]
 # Only used in tests
@@ -56,7 +57,5 @@ unwrap_used = "deny"
 nursery = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 
-# Needed for shadow.rs generated output
-empty_line_after_doc_comments = "allow"
 # Needed for Utoipa OpenApi derive
 needless_for_each = "allow"
