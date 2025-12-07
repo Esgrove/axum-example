@@ -19,6 +19,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use axum::Router;
+use axum::http::StatusCode;
 use axum::routing::{get, post};
 use clap::{Parser, arg};
 use tower::ServiceBuilder;
@@ -217,7 +218,7 @@ fn build_router(shared_state: &SharedState, config: &Arc<Config>) -> Router {
                 .layer(
                     // Graceful shutdown will wait for outstanding requests to complete.
                     // Add a timeout so requests do not hang forever.
-                    TimeoutLayer::new(tokio::time::Duration::from_secs(10)),
+                    TimeoutLayer::with_status_code(StatusCode::SERVICE_UNAVAILABLE, tokio::time::Duration::from_secs(10)),
                 ),
         )
         .with_state(Arc::clone(shared_state));
