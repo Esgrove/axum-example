@@ -21,7 +21,7 @@ use anyhow::Result;
 use axum::Router;
 use axum::http::StatusCode;
 use axum::routing::{get, post};
-use clap::{Parser, arg};
+use clap::Parser;
 use tower::ServiceBuilder;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
