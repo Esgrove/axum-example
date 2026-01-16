@@ -13,7 +13,7 @@ rust-version = "1.90.0"
 anyhow = "1.0.100"
 axum = { version = "0.8.8", features = ["http2", "macros"] }
 axum-extra = { version = "0.12.5", features = ["with-rejection"] }
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 clap = { version = "4.5.54", features = ["derive", "env"] }
 colored = "3.0.0"
 dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
