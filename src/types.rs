@@ -11,7 +11,7 @@ use anyhow::{Context, anyhow};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use dashmap::DashMap;
-use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use tracing::level_filters::LevelFilter;
 use utoipa::ToSchema;
