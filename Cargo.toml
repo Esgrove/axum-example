@@ -12,9 +12,9 @@ rust-version = "1.90.0"
 [dependencies]
 anyhow = "1.0.102"
 axum = { version = "0.8.9", features = ["http2", "macros"] }
-axum-extra = { version = "0.12.5", features = ["with-rejection"] }
+axum-extra = { version = "0.12.6", features = ["with-rejection"] }
 chrono = { version = "0.4.44", features = ["serde"] }
-clap = { version = "4.6.0", features = ["derive", "env"] }
+clap = { version = "4.6.1", features = ["derive", "env"] }
 colored = "3.1.1"
 dashmap = { version = "6.1.0", features = ["serde", "rayon", "inline"] }
 dirs = "6.0.0"
@@ -23,7 +23,7 @@ rand = "0.10.1"
 rayon = "1.12.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-tokio = { version = "1.52.0", features = ["macros", "full"] }
+tokio = { version = "1.52.1", features = ["macros", "full"] }
 toml = "1.1.2"
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.6.8", features = ["timeout", "trace"] }
