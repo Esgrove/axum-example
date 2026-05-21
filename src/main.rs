@@ -109,6 +109,11 @@ async fn main() -> Result<()> {
         tracing::info!("{}", VERSION_INFO.to_string_pretty());
     }
 
+    run_server(args).await
+}
+
+/// Set up application state, spawn background tasks and run the HTTP server.
+async fn run_server(args: Args) -> Result<()> {
     let file_config = FileConfig::get_config();
 
     let shared_state = AppState::new_shared_state();
