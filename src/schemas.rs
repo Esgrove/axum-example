@@ -43,6 +43,15 @@ pub struct ItemQuery {
     pub name: String,
 }
 
+/// Optional pagination parameters for listing items.
+#[derive(Debug, Clone, Default, Deserialize, ToSchema, IntoParams)]
+pub struct ItemListQuery {
+    #[param(example = 0)]
+    pub skip: Option<usize>,
+    #[param(example = 10)]
+    pub limit: Option<usize>,
+}
+
 /// Simple response with a message
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct MessageResponse {
@@ -77,6 +86,34 @@ pub struct VersionInfo {
     pub commit: &'static str,
     #[schema(example = "rustc 1.76.0 (07dca489a 2024-02-04)")]
     pub rust_version: &'static str,
+}
+
+/// Basic service health response.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HealthResponse {
+    #[schema(example = "axum-example")]
+    pub service: String,
+    #[schema(example = "0.13.0")]
+    pub version: String,
+    #[schema(example = "LOCAL")]
+    pub environment: String,
+    #[schema(example = "ok")]
+    pub status: String,
+    #[schema(example = "2026-06-10T09:00:00Z")]
+    pub timestamp: String,
+    #[schema(example = "2026-06-10T08:59:00Z")]
+    pub start_time: String,
+    #[schema(example = 1234)]
+    pub uptime_ms: u64,
+}
+
+/// Not found response.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct NotFoundResponse {
+    #[schema(example = "Not Found")]
+    pub error: String,
+    #[schema(example = "Path does not exist")]
+    pub message: String,
 }
 
 /// Authentication failed response.
@@ -139,6 +176,15 @@ impl AuthErrorResponse {
     pub fn new_from_str(message: &str) -> Self {
         Self {
             message: message.to_string(),
+        }
+    }
+}
+
+impl NotFoundResponse {
+    pub fn new() -> Self {
+        Self {
+            error: "Not Found".to_string(),
+            message: "Path does not exist".to_string(),
         }
     }
 }
@@ -254,5 +300,142 @@ impl fmt::Display for VersionInfo {
         write!(f, "branch: {}, ", self.branch)?;
         write!(f, "commit: {}, ", self.commit)?;
         write!(f, "rust version: {}", self.rust_version)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use axum::body::Body;
+    use axum::extract::FromRequest;
+    use http_body_util::BodyExt;
+    use serde_json::Value;
+
+    async fn response_json(response: Response) -> Value {
+        let bytes = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body should collect")
+            .to_bytes();
+        serde_json::from_slice(&bytes).expect("body should be json")
+    }
+
+    #[test]
+    fn constructors_build_expected_messages() {
+        assert_eq!(MessageResponse::new_from_str("hello").message, "hello");
+        assert_eq!(AuthErrorResponse::new_from_str("denied").message, "denied");
+
+        let not_found = NotFoundResponse::new();
+        assert_eq!(not_found.error, "Not Found");
+        assert_eq!(not_found.message, "Path does not exist");
+    }
+
+    #[tokio::test]
+    async fn create_item_response_maps_success_and_conflict_statuses() {
+        let item = Item {
+            id: 1234,
+            name: "created".to_string(),
+        };
+
+        let response = CreateItemResponse::Created(item).into_response();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        assert_eq!(response_json(response).await["name"], "created");
+
+        let response = CreateItemResponse::Error(MessageResponse::new_from_str("exists")).into_response();
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+        assert_eq!(response_json(response).await["message"], "exists");
+    }
+
+    #[tokio::test]
+    async fn item_response_maps_found_and_missing_statuses() {
+        let item = Item {
+            id: 2345,
+            name: "found".to_string(),
+        };
+
+        let response = ItemResponse::Found(item).into_response();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response_json(response).await["name"], "found");
+
+        let response = ItemResponse::Error(MessageResponse::new_from_str("missing")).into_response();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response_json(response).await["message"], "missing");
+    }
+
+    #[tokio::test]
+    async fn remove_item_response_maps_removed_and_missing_statuses() {
+        let item = Item {
+            id: 3456,
+            name: "removed".to_string(),
+        };
+
+        let response = RemoveItemResponse::Removed(item).into_response();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response_json(response).await["name"], "removed");
+
+        let response = RemoveItemResponse::new_error("gone").into_response();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response_json(response).await["message"], "gone");
+    }
+
+    #[tokio::test]
+    async fn error_responses_map_to_expected_statuses() {
+        let response = AuthErrorResponse::new_from_str("bad key").into_response();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(response_json(response).await["message"], "bad key");
+
+        let response = ServerError(anyhow::anyhow!("boom")).into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(
+            response_json(response)
+                .await
+                .as_str()
+                .expect("server error body should be a string")
+                .contains("boom")
+        );
+    }
+
+    #[tokio::test]
+    async fn rejection_error_preserves_status_and_kind() {
+        let response = RejectionError {
+            status: StatusCode::BAD_REQUEST,
+            message: "malformed".to_string(),
+            rejection: "JsonSyntaxError".to_string(),
+        }
+        .into_response();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let body = response_json(response).await;
+        assert_eq!(body["error"], "JsonSyntaxError");
+        assert_eq!(body["message"], "malformed");
+    }
+
+    #[test]
+    fn version_info_formats_compact_and_pretty_strings() {
+        let compact = VERSION_INFO.to_string();
+        assert!(compact.contains(version::PACKAGE_NAME));
+        assert!(compact.contains(version::PACKAGE_VERSION));
+
+        let pretty = VERSION_INFO.to_string_pretty();
+        assert!(pretty.contains("Version information"));
+        assert!(pretty.contains(version::GIT_COMMIT));
+    }
+
+    #[tokio::test]
+    async fn json_rejection_conversion_labels_known_variants() {
+        let request = axum::http::Request::builder()
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"name":"broken",}"#))
+            .expect("request should build");
+        let rejection = Json::<CreateItem>::from_request(request, &())
+            .await
+            .expect_err("malformed JSON should reject");
+        let rejection = RejectionError::from(rejection);
+        let response = rejection.into_response();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(response_json(response).await["error"], "JsonSyntaxError");
     }
 }

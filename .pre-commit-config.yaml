@@ -1,33 +1,64 @@
 exclude: ^(.idea|.vscode)/
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    # https://github.com/pre-commit/pre-commit-hooks
+  # https://prek.j178.dev/builtin/#2-explicit-builtin-repository
+  - repo: builtin
     hooks:
       - id: check-added-large-files
+        priority: 1
       - id: check-case-conflict
+        priority: 1
+      - id: check-executables-have-shebangs
+        priority: 1
       - id: check-json
+        priority: 1
       - id: check-merge-conflict
+        priority: 1
+      - id: check-shebang-scripts-are-executable
+        priority: 1
+      - id: check-symlinks
+        priority: 1
       - id: check-toml
+        priority: 1
+      - id: check-vcs-permalinks
+        priority: 1
+      - id: check-xml
+        priority: 1
       - id: check-yaml
+        priority: 1
+      - id: destroyed-symlinks
+        priority: 1
       - id: end-of-file-fixer
+        priority: 1
       - id: mixed-line-ending
+        priority: 1
       - id: trailing-whitespace
+        priority: 1
 
   - repo: local
     hooks:
       - id: rust-fmt
-        name: rust fmt format
+        name: cargo fmt
         description: Run cargo fmt on files included in the commit.
         entry: cargo fmt
         pass_filenames: false
-        types: [file, rust]
         language: system
+        types: [file, rust]
+        priority: 1
 
       - id: rust-clippy
-        name: rust clippy lint
-        description: Run cargo clippy on files included in the commit.
-        entry: cargo clippy
+        name: cargo clippy
+        description: Run cargo clippy with warnings as errors.
+        entry: cargo clippy --all-targets -- -Dwarnings
         pass_filenames: false
-        types: [file, rust]
         language: system
+        files: ^(src/.*\.rs|Cargo\.(toml|lock))$
+        priority: 2
+
+      - id: rust-test
+        name: cargo test
+        description: Run the Rust test suite.
+        entry: cargo test
+        pass_filenames: false
+        language: system
+        files: ^(src/.*\.rs|Cargo\.(toml|lock))$
+        priority: 3

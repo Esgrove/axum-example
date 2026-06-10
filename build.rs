@@ -1,6 +1,14 @@
+//! Cargo build script — runs automatically before compilation.
+//!
+//! Gathers build metadata and exposes them as compile-time env vars
+//! readable via `env!()` macro in source code.
+
 use std::process::Command;
 
 fn main() {
+    let name = std::env::var("CARGO_PKG_NAME").expect("CARGO_PKG_NAME not set");
+    let version = std::env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION not set");
+
     let git_hash = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .output()
@@ -29,18 +37,21 @@ fn main() {
         |o| String::from_utf8_lossy(&o.stdout).trim().to_string(),
     );
 
-    let version = std::env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "unknown".to_string());
-
     let tag = std::env::var("DEPLOY_TAG").unwrap_or_else(|_| "local".to_string());
 
-    // Set compile time env variables
-    println!("cargo:rustc-env=GIT_COMMIT={git_hash}");
-    println!("cargo:rustc-env=GIT_BRANCH={git_branch}");
-    println!("cargo:rustc-env=BUILD_TIME={build_time}");
-    println!("cargo:rustc-env=VERSION={version}");
-    println!("cargo:rustc-env=RUST_VERSION={rust_version}");
-    println!("cargo:rustc-env=DEPLOY_TAG={tag}");
+    // Combined human-readable version string
+    let version_string = format!("{name} {version} {build_time} {git_branch} {git_hash}");
 
-    // Tell Cargo to rerun if these change
+    // Set compile time env variables
+    println!("cargo:rustc-env=BUILD_TIME={build_time}");
+    println!("cargo:rustc-env=DEPLOY_TAG={tag}");
+    println!("cargo:rustc-env=GIT_BRANCH={git_branch}");
+    println!("cargo:rustc-env=GIT_COMMIT={git_hash}");
+    println!("cargo:rustc-env=RUST_VERSION={rust_version}");
+    println!("cargo:rustc-env=VERSION_STRING={version_string}");
+    println!("cargo:rustc-env=VERSION={version}");
+
+    // Tell Cargo to rerun the build script when any of these change.
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-env-changed=DEPLOY_TAG");
 }

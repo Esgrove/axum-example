@@ -175,7 +175,9 @@ fi
 print_magenta "Testing routes..."
 
 get "$URL:$PORT"
+get "$URL:$PORT/health"
 get "$URL:$PORT/version"
+get "$URL:$PORT/metrics"
 get "$URL:$PORT/items"
 post "$URL:$PORT/items" '{"name":"esgrove"}'
 get "$URL:$PORT/item?name=esgrove"
@@ -189,6 +191,7 @@ for name in pizzalover9000 akseli swanson; do
 done
 
 get "$URL:$PORT/items"
+get "$URL:$PORT/items?skip=1&limit=2"
 
 print_yellow 'Using GET with admin routes results in 405 "Method Not Allowed":'
 get "$URL:$PORT/admin/remove/pizzalover"

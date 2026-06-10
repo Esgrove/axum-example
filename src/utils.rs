@@ -1,15 +1,8 @@
-//! Utils.
+//! Shared utility helpers.
 //!
-//! Helper and utility functions.
-//!
-
-use colored::{ColoredString, Colorize};
+//! Contains small cross-cutting functions that do not belong to a specific
+//! route or service module, such as signal handling.
 use tokio::signal;
-
-/// Format bool value as a coloured string.
-pub fn colorize_bool(value: bool) -> ColoredString {
-    if value { "true".green() } else { "false".yellow() }
-}
 
 #[allow(clippy::redundant_pub_crate)]
 /// Handle shutdown signal.

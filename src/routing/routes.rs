@@ -1,20 +1,23 @@
-//! Routes.
+//! Public routes.
 //!
-//! Public routes that anyone can call.
-//!
+//! Contains unauthenticated service endpoints, item CRUD examples,
+//! the health response, version information, and Prometheus metrics output.
 
 use axum::Json;
-use axum::extract::{Query, State};
+use std::sync::Arc;
+
+use axum::extract::{Extension, Query, State};
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
+use axum::http::header::CONTENT_TYPE;
+use axum::response::{IntoResponse, Response};
 use axum_extra::extract::WithRejection;
 use chrono::{SecondsFormat, Utc};
 
 use crate::schemas::{
-    CreateItem, CreateItemResponse, ItemListResponse, ItemQuery, ItemResponse, MessageResponse, RejectionError,
-    RejectionErrorResponse, ServerError, VERSION_INFO, VersionInfo,
+    CreateItem, CreateItemResponse, HealthResponse, ItemListQuery, ItemListResponse, ItemQuery, ItemResponse,
+    MessageResponse, RejectionError, RejectionErrorResponse, ServerError, VERSION_INFO, VersionInfo,
 };
-use crate::types::{Item, SharedState};
+use crate::types::{Config, Item, SharedState};
 use crate::version;
 
 // Debug handler macro generates better error messages during compile
@@ -33,11 +36,60 @@ use crate::version;
 )]
 pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     let datetime = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
-    tracing::debug!("Root: {}", datetime);
+    crate::log_debug!("Root: {}", datetime);
     (
         StatusCode::OK,
         Json(MessageResponse::new(format!("{} {}", version::PACKAGE_NAME, datetime))),
     )
+}
+
+/// Return basic service health information.
+#[axum::debug_handler]
+#[utoipa::path(
+    get,
+    path = "/health",
+    responses(
+        (status = OK, body = [HealthResponse], description = "Service health information")
+    )
+)]
+pub async fn health(
+    State(state): State<SharedState>,
+    Extension(config): Extension<Arc<Config>>,
+) -> (StatusCode, Json<HealthResponse>) {
+    let uptime_ms = u64::try_from(state.uptime().as_millis()).unwrap_or(u64::MAX);
+    (
+        StatusCode::OK,
+        Json(HealthResponse {
+            service: version::PACKAGE_NAME.to_string(),
+            version: version::PACKAGE_VERSION.to_string(),
+            environment: config.env.to_string(),
+            status: "ok".to_string(),
+            timestamp: Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+            start_time: state.start_time_utc().to_rfc3339_opts(SecondsFormat::Millis, true),
+            uptime_ms,
+        }),
+    )
+}
+
+/// Return OpenTelemetry metrics in Prometheus text format.
+#[axum::debug_handler]
+#[utoipa::path(
+    get,
+    path = "/metrics",
+    responses(
+        (status = OK, description = "Prometheus metrics in text format", content_type = "text/plain"),
+        (status = INTERNAL_SERVER_ERROR, body = [MessageResponse], description = "Metrics encoding failed")
+    )
+)]
+pub async fn metrics(State(state): State<SharedState>) -> Response {
+    match state.telemetry().render_prometheus() {
+        Ok((body, content_type)) => ([(CONTENT_TYPE, content_type)], body).into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(MessageResponse::new(format!("Failed to render metrics: {err}"))),
+        )
+            .into_response(),
+    }
 }
 
 /// Return version and build information.
@@ -50,7 +102,7 @@ pub async fn root() -> (StatusCode, Json<MessageResponse>) {
     )
 )]
 pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
-    tracing::debug!("Version: {}", version::PACKAGE_VERSION);
+    crate::log_debug!("Version: {}", version::PACKAGE_VERSION);
     (StatusCode::OK, Json(&VERSION_INFO))
 }
 
@@ -68,12 +120,12 @@ pub async fn version() -> (StatusCode, Json<&'static VersionInfo>) {
     )
 )]
 pub async fn query_item(Query(item): Query<ItemQuery>, State(state): State<SharedState>) -> impl IntoResponse {
-    tracing::debug!("Query item: {}", item.name);
+    crate::log_debug!("Query item: {}", item.name);
     if let Some(existing_item) = state.db.get(&item.name) {
-        tracing::info!("{:?}", existing_item);
+        crate::log_info!("{:?}", existing_item);
         ItemResponse::Found(existing_item.clone())
     } else {
-        tracing::error!("Item not found: {}", item.name);
+        crate::log_error!("Item not found: {}", item.name);
         ItemResponse::Error(MessageResponse {
             message: format!("Item does not exist: {}", item.name),
         })
@@ -102,7 +154,7 @@ pub async fn create_item(
     WithRejection(Json(payload), _): WithRejection<Json<CreateItem>, RejectionError>,
 ) -> Result<CreateItemResponse, ServerError> {
     if state.db.contains_key(&payload.name) {
-        tracing::error!("Item already exists: {}", payload.name);
+        crate::log_error!("Item already exists: {}", payload.name);
         return Ok(CreateItemResponse::Error(MessageResponse::new(format!(
             "Item already exists: {}",
             payload.name
@@ -117,24 +169,36 @@ pub async fn create_item(
     };
     // TODO: should probably ensure ids are unique too
     state.db.insert(item.name.clone(), item.clone());
-    tracing::debug!("Create item: {}", item.name);
+    crate::log_debug!("Create item: {}", item.name);
     Ok(CreateItemResponse::Created(item))
 }
 
 /// List all items.
-// TODO: add optional parameters like skip and limit
+///
+/// Supports optional `skip` and `limit` query parameters for simple pagination.
 #[axum::debug_handler]
 #[utoipa::path(
     get,
     path = "/items",
+    params(ItemListQuery),
     responses(
         (status = 200, body = [ItemListResponse])
     )
 )]
-pub async fn list_items(State(state): State<SharedState>) -> (StatusCode, Json<ItemListResponse>) {
-    tracing::debug!("List items");
-    let names: Vec<String> = state.db.iter().map(|entry| entry.key().clone()).collect();
+pub async fn list_items(
+    Query(query): Query<ItemListQuery>,
+    State(state): State<SharedState>,
+) -> (StatusCode, Json<ItemListResponse>) {
+    crate::log_debug!("List items");
+    let mut names: Vec<String> = state.db.iter().map(|entry| entry.key().clone()).collect();
+    names.sort();
     let num_items = names.len();
-    tracing::debug!("List items: found {num_items} items");
+    let skip = query.skip.unwrap_or_default();
+    let names = names
+        .into_iter()
+        .skip(skip)
+        .take(query.limit.unwrap_or(usize::MAX))
+        .collect();
+    crate::log_debug!("List items: found {num_items} items");
     (StatusCode::OK, Json(ItemListResponse { num_items, names }))
 }

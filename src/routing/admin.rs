@@ -1,7 +1,7 @@
-//! Admin Routes.
+//! Admin routes.
 //!
-//! Admin routes that require an api key to use.
-//!
+//! Contains endpoints nested under `/admin`.
+//! Every route in this module requires the custom API-key extractor.
 
 use std::sync::Arc;
 
@@ -37,20 +37,21 @@ pub fn routes() -> Router<SharedState> {
         (status = UNAUTHORIZED, body = [AuthErrorResponse], description = "Unauthorized"),
     )
 )]
-async fn delete_all_items(
+pub async fn delete_all_items(
     _api_key: ApiKeyExtractor,
     State(state): State<SharedState>,
     Extension(_config): Extension<Arc<Config>>,
 ) -> impl IntoResponse {
     let number_of_items = state.db.len();
     state.db.clear();
-    tracing::debug!("Delete all {number_of_items} items");
+    crate::log_debug!("Delete all {number_of_items} items");
     (
         StatusCode::OK,
         Json(MessageResponse::new(format!("Removed {number_of_items} items"))),
     )
 }
 
+/// Remove item with given name.
 #[axum::debug_handler]
 #[utoipa::path(
     delete,
@@ -64,8 +65,7 @@ async fn delete_all_items(
         (status = UNAUTHORIZED, body = [AuthErrorResponse], description = "Unauthorized"),
     )
 )]
-/// Remove item with given name.
-async fn remove_item(
+pub async fn remove_item(
     _api_key: ApiKeyExtractor,
     State(state): State<SharedState>,
     Extension(_config): Extension<Arc<Config>>,
@@ -73,11 +73,11 @@ async fn remove_item(
 ) -> impl IntoResponse {
     state.db.remove(&name).map_or_else(
         || {
-            tracing::error!("Remove item failed for non-existing name: {}", name);
+            crate::log_error!("Remove item failed for non-existing name: {}", name);
             RemoveItemResponse::new_error(format!("Item does not exist: {name}"))
         },
         |existing_item| {
-            tracing::debug!("Remove item: {}", name);
+            crate::log_debug!("Remove item: {}", name);
             RemoveItemResponse::Removed(existing_item.1)
         },
     )
