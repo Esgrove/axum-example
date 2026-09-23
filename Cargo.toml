@@ -16,7 +16,7 @@ axum-extra = { version = "0.12.6", features = ["with-rejection"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env"] }
 dashmap = { version = "6.2.1", features = ["serde", "rayon", "inline"] }
-opentelemetry = "0.32.0"
+opentelemetry = "0.33.0"
 opentelemetry-otlp = { version = "0.32.0", default-features = false, features = ["grpc-tonic", "metrics", "internal-logs"] }
 opentelemetry-prometheus = "0.32.0"
 opentelemetry_sdk = "0.32.1"
