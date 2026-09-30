@@ -14,32 +14,32 @@ anyhow = "1.0.104"
 axum = { version = "0.8.9", features = ["http2", "macros"] }
 axum-extra = { version = "0.12.6", features = ["with-rejection"] }
 chrono = { version = "0.4.45", features = ["serde"] }
-clap = { version = "4.6.6", features = ["derive", "env"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
 dashmap = { version = "6.2.1", features = ["serde", "rayon", "inline"] }
-opentelemetry = "0.32.0"
-opentelemetry-otlp = { version = "0.32.0", default-features = false, features = ["grpc-tonic", "metrics", "internal-logs"] }
-opentelemetry-prometheus = "0.32.0"
-opentelemetry_sdk = "0.32.1"
+opentelemetry = "0.33.0"
+opentelemetry-otlp = { version = "0.33.0", default-features = false, features = ["grpc-tonic", "metrics", "internal-logs"] }
+opentelemetry-prometheus = "0.33.0"
+opentelemetry_sdk = "0.33.0"
 prometheus = "0.14.0"
-rand = "0.10.2"
+rand = "0.10.3"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 strum = { version = "0.28.0", features = ["derive"] }
 tokio = { version = "1.53.1", features = ["macros", "full"] }
 tower = { version = "0.5.3", features = ["util"] }
-tower-http = { version = "0.7.0", features = ["timeout", "trace"] }
+tower-http = { version = "0.7.1", features = ["timeout", "trace"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
-utoipa = { version = "5.5.0", features = ["axum_extras"] }
-utoipa-rapidoc = { version = "6.0.0", features = ["axum"] }
-utoipa-redoc = { version = "6.0.0", features = ["axum"] }
-utoipa-scalar = { version = "0.3.0", features = ["axum"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+utoipa = { version = "6.0.0", features = ["axum_extras"] }
+utoipa-rapidoc = { version = "7.0.0", features = ["axum"] }
+utoipa-redoc = { version = "7.0.0", features = ["axum"] }
+utoipa-scalar = { version = "0.4.0", features = ["axum"] }
+utoipa-swagger-ui = { version = "10.0.1", features = ["axum"] }
 
 [dev-dependencies]
 # Only used in tests
 http-body-util = "0.1.5"
-opentelemetry_sdk = { version = "0.32.1", features = ["testing"] }
+opentelemetry_sdk = { version = "0.33.0", features = ["testing"] }
 
 [profile.dev]
 incremental = true
