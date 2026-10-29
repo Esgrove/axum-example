@@ -76,6 +76,11 @@ unsafe_code = "deny"
 
 [lints.clippy]
 # https://rust-lang.github.io/rust-clippy/master/index.html
+# Strict on purpose: `pedantic` and `nursery` push towards idiomatic Rust,
+# and the restriction lints below rule out the common sources of runtime panics
+# (`unwrap`, `expect`, indexing, unchecked arithmetic, `panic!`, `todo!`...),
+# so errors must be handled explicitly for a reliable and stable service.
+# Test code is relaxed in `clippy.toml`.
 missing_errors_doc = "warn"
 allow_attributes_without_reason = "deny"
 arithmetic_side_effects = "deny"
