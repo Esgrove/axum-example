@@ -7,14 +7,22 @@ on:
     paths:
       - ".github/workflows/rust.yml"
       - "**.rs"
+      - ".cargo/**"
+      - ".dockerignore"
       - "Cargo.lock"
       - "Cargo.toml"
+      - "clippy.toml"
+      - "Dockerfile"
   pull_request:
     paths:
       - ".github/workflows/rust.yml"
       - "**.rs"
+      - ".cargo/**"
+      - ".dockerignore"
       - "Cargo.lock"
       - "Cargo.toml"
+      - "clippy.toml"
+      - "Dockerfile"
 
 # Cancel previous runs for PRs but not pushes to main
 concurrency:
@@ -25,42 +33,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out source repository
-        uses: actions/checkout@v7
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
-
-      - name: Set up cargo cache
-        uses: actions/cache@v6
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
-      - name: Build
-        run: cargo build
-
-      - name: Test
-        run: cargo test --no-fail-fast
-
-      - name: Lint
-        # exit non-zero if there are any warnings
-        # https://doc.rust-lang.org/stable/clippy/usage.html
-        run: cargo clippy -- -Dwarnings
-
   format:
     runs-on: ubuntu-latest
     steps:
@@ -71,7 +43,55 @@ jobs:
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt, clippy
+          components: rustfmt
 
       - name: Format
         run: cargo fmt --check --verbose
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v7
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: Set up cargo cache
+        uses: Swatinem/rust-cache@v2
+
+      # Build, lint, and test share one runner so they reuse the same cache and compiled dependencies.
+      - name: Build
+        run: cargo build --all-targets
+
+      - name: Test
+        run: cargo test --no-fail-fast
+
+      - name: Lint
+        # Fail on any warning, including in tests and the build script.
+        # https://doc.rust-lang.org/stable/clippy/usage.html
+        run: cargo clippy --all-targets -- -Dwarnings
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: axum-runtime
+          push: false
+          tags: axum-runtime:ci
+          build-args: |
+            DEPLOY_TAG=ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

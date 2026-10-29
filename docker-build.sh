@@ -51,7 +51,7 @@ fi
 print_magenta "Building Docker image..."
 docker build \
     --pull \
-    --build-arg DEPLOYMENT_TAG="$TAG" \
+    --build-arg DEPLOY_TAG="$TAG" \
     --tag "$DOCKER_IMAGE":latest \
     --target "$DOCKER_IMAGE" \
     --file Dockerfile .

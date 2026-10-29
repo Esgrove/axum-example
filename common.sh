@@ -5,9 +5,9 @@ set -eo pipefail
 REPO_ROOT=$(git rev-parse --show-toplevel || (cd "$(dirname "${BASH_SOURCE[0]}")" && pwd))
 export REPO_ROOT
 
-# Check platform:
-# BSD (Mac) and GNU (Linux & Git for Windows) coreutils implementations
-# have some differences for example in the available command line options.
+# Check platform.
+# BSD (Mac) and GNU (Linux & Git for Windows) coreutils implementations differ in some details,
+# for example in the available command line options.
 case "$(uname -s)" in
     "Darwin")
         export BASH_PLATFORM="mac"
