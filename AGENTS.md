@@ -177,7 +177,7 @@ axum-example/
 ├── Cargo.lock              # locked Rust dependency graph
 ├── build.rs                # compile-time version/build metadata exporter
 ├── clippy.toml             # crate-local Clippy settings
-├── Dockerfile              # cached dependency build and distroless runtime image
+├── Dockerfile              # multi-stage build and runtime image
 ├── .cargo/config.toml      # cargo aliases
 ├── .pre-commit-config.yaml # prek / pre-commit hooks
 ├── README.md               # local development and operational notes

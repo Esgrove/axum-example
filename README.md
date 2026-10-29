@@ -15,8 +15,6 @@ Features:
 - Embedded [Model Context Protocol](https://modelcontextprotocol.io) server at `/mcp`
 - Library and binary split with an integration test suite under `tests/`
 - Strict Clippy lints, `unsafe` denied, and missing docs warned
-- Small distroless Docker image running as a non-root user
-
 ## Running locally
 
 Usage:
