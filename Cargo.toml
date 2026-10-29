@@ -1,13 +1,22 @@
 [package]
 name = "axum-example"
-version = "0.13.0"
+version = "0.14.0"
 edition = "2024"
 description = "Axum API example"
 authors = ["Esgrove <esgrove@outlook.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/Esgrove/rust-axum-example"
-rust-version = "1.96.0"
+# Remember to update the Dockerfile too if this changes.
+rust-version = "1.99"
+
+[lib]
+name = "axum_example"
+path = "src/lib.rs"
+
+[[bin]]
+name = "axum-example"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.104"
@@ -16,16 +25,19 @@ axum-extra = { version = "0.12.6", features = ["with-rejection"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive", "env"] }
 dashmap = { version = "6.2.1", features = ["serde", "rayon", "inline"] }
-opentelemetry = "0.33.0"
-opentelemetry-otlp = { version = "0.33.0", default-features = false, features = ["grpc-tonic", "metrics", "internal-logs"] }
-opentelemetry-prometheus = "0.33.0"
-opentelemetry_sdk = "0.33.0"
+opentelemetry = "0.33.1"
+opentelemetry-otlp = { version = "0.33.1", default-features = false, features = ["grpc-tonic", "metrics", "internal-logs"] }
+opentelemetry-prometheus = "0.33.1"
+opentelemetry_sdk = "0.33.1"
 prometheus = "0.14.0"
 rand = "0.10.3"
+rmcp = { version = "3.6.0", features = ["server", "macros", "transport-streamable-http-server"] }
+schemars = { version = "1.2.3", features = ["derive"] }
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
 strum = { version = "0.28.0", features = ["derive"] }
-tokio = { version = "1.53.1", features = ["macros", "full"] }
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["macros", "full"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["timeout", "trace"] }
 tracing = "0.1.44"
@@ -34,30 +46,56 @@ utoipa = { version = "6.0.0", features = ["axum_extras"] }
 utoipa-rapidoc = { version = "7.0.0", features = ["axum"] }
 utoipa-redoc = { version = "7.0.0", features = ["axum"] }
 utoipa-scalar = { version = "0.4.0", features = ["axum"] }
-utoipa-swagger-ui = { version = "10.0.1", features = ["axum"] }
+utoipa-swagger-ui = { version = "10.0.2", features = ["axum"] }
 
 [dev-dependencies]
 # Only used in tests
 http-body-util = "0.1.5"
-opentelemetry_sdk = { version = "0.33.0", features = ["testing"] }
+opentelemetry_sdk = { version = "0.33.1", features = ["testing"] }
+tokio = { version = "1.54.1", features = ["full", "test-util"] }
 
 [profile.dev]
 incremental = true
 
 [profile.release]
+# Enable link-time optimization.
+# This can improve performance and reduce binary size,
+# but it increases compilation time a lot.
 lto = true
 # https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 codegen-units = 1
 
 [lints.rust]
-unsafe_code = "forbid"
+missing_docs = "warn"
+# Both `deny` and `forbid` make `unsafe` a hard compile error by default.
+# `forbid` cannot be overridden,
+# while `deny` can be lifted locally with a scoped `#[allow(unsafe_code, reason = "...")]`.
+# `deny` keeps unsafe banned everywhere by default but lets justified call sites opt in,
+# for example `std::env::set_var` in tests, which is `unsafe` in the 2024 edition.
+unsafe_code = "deny"
 
 [lints.clippy]
 # https://rust-lang.github.io/rust-clippy/master/index.html
+missing_errors_doc = "warn"
+allow_attributes_without_reason = "deny"
+arithmetic_side_effects = "deny"
+cast_possible_wrap = "deny"
+char_lit_as_u8 = "deny"
 enum_glob_use = "deny"
+exit = "deny"
+expect_used = "deny"
+fn_to_numeric_cast = "deny"
+fn_to_numeric_cast_with_truncation = "deny"
+indexing_slicing = "deny"
+panic = "deny"
+panic_in_result_fn = "deny"
+ptr_as_ptr = "deny"
+string_slice = "deny"
+todo = "deny"
+unchecked_time_subtraction = "deny"
+unimplemented = "deny"
+unnecessary_cast = "deny"
+unreachable = "deny"
 unwrap_used = "deny"
-nursery = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-
-# Needed for Utoipa OpenApi derive
-needless_for_each = "allow"
+nursery = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }

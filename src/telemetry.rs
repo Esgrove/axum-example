@@ -1,7 +1,6 @@
 //! OpenTelemetry metric export.
 //!
-//! A Prometheus reader is always attached so `/metrics` can scrape the same
-//! instruments that optional OTLP export uses.
+//! A Prometheus reader is always attached so `/metrics` can scrape the same instruments that optional OTLP export uses.
 //! OTLP push export is enabled only when an OTLP endpoint env var is present.
 
 use std::env;
@@ -16,8 +15,8 @@ use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::metrics::SdkMeterProvider;
 use prometheus::{Encoder, Registry, TextEncoder};
 
-use crate::log_info;
-use crate::log_warn;
+use crate::logging::{log_info, log_warn};
+use crate::utils::duration_millis;
 
 /// Environment variable that points the app at an OTLP collector endpoint.
 pub const OTEL_EXPORTER_OTLP_ENDPOINT_ENV_VAR: &str = "OTEL_EXPORTER_OTLP_ENDPOINT";
@@ -46,6 +45,7 @@ pub struct TelemetryMetrics {
     request_duration_ms: Histogram<u64>,
     in_progress_requests: Gauge<u64>,
     errors: Counter<u64>,
+    rate_limited: Counter<u64>,
 }
 
 /// Fields recorded when a request completes.
@@ -59,8 +59,6 @@ pub struct CompletedRequestMetric<'a> {
     pub status: u16,
     /// End-to-end request latency observed by the middleware.
     pub latency: Duration,
-    /// Current in-flight request count after this request completed.
-    pub in_progress: u64,
 }
 
 impl Telemetry {
@@ -78,9 +76,22 @@ impl Telemetry {
     }
 
     /// Build a telemetry handle without OTLP push export.
+    ///
+    /// Building the Prometheus exporter only fails if the registry rejects the collector,
+    /// which cannot happen with a fresh registry.
+    /// In that case, this falls back to an unregistered provider so tests and tools still work.
     #[must_use]
     pub fn noop() -> Self {
-        Self::new(false).expect("Prometheus telemetry should build")
+        Self::new(false).unwrap_or_else(|err| {
+            log_warn!(error = %err, "failed to build Prometheus exporter, metrics will not be exported");
+            let provider = SdkMeterProvider::builder().build();
+            let metrics = Arc::new(TelemetryMetrics::new(&provider.meter(INSTRUMENTATION_SCOPE)));
+            Self {
+                provider,
+                registry: Registry::new(),
+                metrics,
+            }
+        })
     }
 
     /// Return the shared metric instruments.
@@ -187,6 +198,11 @@ impl TelemetryMetrics {
                 .with_description("Completed HTTP requests with error status codes.")
                 .with_unit("1")
                 .build(),
+            rate_limited: meter
+                .u64_counter("axum_example_http_rate_limited_total")
+                .with_description("HTTP requests rejected by the rate limiter.")
+                .with_unit("1")
+                .build(),
         }
     }
 
@@ -197,17 +213,18 @@ impl TelemetryMetrics {
         self.in_progress_requests.record(in_progress, &attributes);
     }
 
+    /// Publish the in-flight gauge after a request settles.
+    pub fn record_in_progress(&self, route: &str, method: &str, in_progress: u64) {
+        self.in_progress_requests
+            .record(in_progress, &request_attributes(route, method));
+    }
+
     /// Record an HTTP request completing.
     pub fn record_request_completed(&self, metric: CompletedRequestMetric<'_>) {
         let attributes = completed_request_attributes(metric.route, metric.method, metric.status);
-        let in_progress_attributes = request_attributes(metric.route, metric.method);
         self.requests_completed.add(1, &attributes);
-        self.request_duration_ms.record(
-            u64::try_from(metric.latency.as_millis()).unwrap_or(u64::MAX),
-            &attributes,
-        );
-        self.in_progress_requests
-            .record(metric.in_progress, &in_progress_attributes);
+        self.request_duration_ms
+            .record(duration_millis(metric.latency), &attributes);
 
         if metric.status >= 400 {
             self.errors.add(
@@ -220,6 +237,23 @@ impl TelemetryMetrics {
                 ],
             );
         }
+    }
+}
+
+impl TelemetryMetrics {
+    /// Record a request rejected by the rate limiter.
+    ///
+    /// The raw path is not used as a label to keep cardinality bounded.
+    /// Only whether the path is under `/admin` or `/mcp` is recorded.
+    pub fn record_rate_limited(&self, path: &str) {
+        let area = if path.starts_with("/admin") {
+            "admin"
+        } else if path.starts_with("/mcp") {
+            "mcp"
+        } else {
+            "public"
+        };
+        self.rate_limited.add(1, &[KeyValue::new("area", area)]);
     }
 }
 
@@ -306,7 +340,6 @@ mod tests {
             method: "post",
             status: 201,
             latency: Duration::from_millis(25),
-            in_progress: 0,
         });
 
         let (body, content_type) = telemetry.render_prometheus().expect("metrics render");
@@ -330,7 +363,6 @@ mod tests {
             method: "",
             status: 503,
             latency: Duration::from_millis(10),
-            in_progress: 0,
         });
 
         let (body, _) = telemetry.render_prometheus().expect("metrics render");
@@ -340,5 +372,19 @@ mod tests {
         assert!(body.contains("method=\"unknown\""));
         assert!(body.contains("status_class=\"5xx\""));
         assert!(body.contains("status_code=\"503\""));
+    }
+
+    #[test]
+    fn records_rate_limited_requests_by_area() {
+        let telemetry = Telemetry::noop();
+        let metrics = telemetry.metrics();
+
+        metrics.record_rate_limited("/admin/clear_items");
+        metrics.record_rate_limited("/items");
+
+        let (body, _) = telemetry.render_prometheus().expect("metrics render");
+        assert!(body.contains("axum_example_http_rate_limited_total"));
+        assert!(body.contains("area=\"admin\""));
+        assert!(body.contains("area=\"public\""));
     }
 }

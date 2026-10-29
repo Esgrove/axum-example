@@ -1,7 +1,7 @@
 //! Logging setup and structured logging helpers.
 //!
-//! The helper macros attach build metadata to each event so JSON logs can be
-//! correlated with the exact binary version that emitted them.
+//! The helper macros attach build metadata to each event,
+//! so JSON logs can be tied to the exact binary version that emitted them.
 
 use tracing_subscriber::EnvFilter;
 
@@ -103,8 +103,16 @@ macro_rules! log_error {
     };
 }
 
-/// Initialize tracing logging.
-pub fn initialize_logging(log_level: Option<&LogLevel>, use_json_format: bool) {
+pub use crate::log_debug;
+pub use crate::log_error;
+pub use crate::log_info;
+pub use crate::log_warn;
+
+/// Initialize `tracing` subscribers.
+///
+/// JSON output is meant for log aggregators in deployed environments.
+/// Local runs use a colored, human-readable formatter instead.
+pub fn initialize_logging(log_level: Option<LogLevel>, use_json_format: bool) {
     let mut filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     if let Some(level) = log_level {
         filter = filter.add_directive(level.to_filter().into());

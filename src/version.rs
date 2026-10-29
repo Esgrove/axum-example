@@ -1,8 +1,8 @@
 //! Compile-time version and build metadata.
 //!
 //! Values are populated by `build.rs` with `cargo:rustc-env` directives.
-//! The `/version` route and structured logging helpers use this module so
-//! responses and logs can be tied back to the exact binary that emitted them.
+//! The `/version` route and structured logging helpers use this module
+//! so responses and logs can be tied back to the exact binary that emitted them.
 
 /// UTC timestamp recorded when `build.rs` generated the binary metadata.
 pub static BUILD_TIME: &str = env!("BUILD_TIME");

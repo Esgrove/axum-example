@@ -1,41 +1,23 @@
-//! Cargo build script — runs automatically before compilation.
+//! Cargo build script, which runs automatically before compilation.
 //!
-//! Gathers build metadata and exposes them as compile-time env vars
-//! readable via `env!()` macro in source code.
+//! Gathers build metadata and exposes it as compile-time env vars,
+//! which source code reads with the `env!()` macro.
 
 use std::process::Command;
 
+/// Gather build metadata and export it at compile time.
 fn main() {
-    let name = std::env::var("CARGO_PKG_NAME").expect("CARGO_PKG_NAME not set");
-    let version = std::env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION not set");
+    // Cargo guarantees these values while compiling a package.
+    let name = env!("CARGO_PKG_NAME");
+    let version = env!("CARGO_PKG_VERSION");
 
-    let git_hash = Command::new("git")
-        .args(["rev-parse", "--short", "HEAD"])
-        .output()
-        .map_or_else(
-            |_| "unknown".to_string(),
-            |o| String::from_utf8_lossy(&o.stdout).trim().to_string(),
-        );
-
-    let git_branch = Command::new("git")
-        .args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .output()
-        .map_or_else(
-            |_| "unknown".to_string(),
-            |o| String::from_utf8_lossy(&o.stdout).trim().to_string(),
-        );
-
-    let build_time = Command::new("date")
-        .args(["-u", "+%Y-%m-%d_%H:%M:%S"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map_or_else(|| "unknown".to_string(), |s| s.trim().to_string());
-
-    let rust_version = Command::new("rustc").args(["--version"]).output().map_or_else(
-        |_| "unknown".to_string(),
-        |o| String::from_utf8_lossy(&o.stdout).trim().to_string(),
-    );
+    // Each value comes from an external command.
+    // `command_output_or_unknown` falls back to "unknown" when the command fails to spawn,
+    // exits non-zero, or produces empty output, so version metadata is never silently blank.
+    let git_hash = command_output_or_unknown("git", &["rev-parse", "--short", "HEAD"]);
+    let git_branch = command_output_or_unknown("git", &["rev-parse", "--abbrev-ref", "HEAD"]);
+    let build_time = command_output_or_unknown("date", &["-u", "+%Y-%m-%d_%H:%M:%S"]);
+    let rust_version = command_output_or_unknown("rustc", &["--version"]);
 
     let tag = std::env::var("DEPLOY_TAG").unwrap_or_else(|_| "local".to_string());
 
@@ -54,4 +36,21 @@ fn main() {
     // Tell Cargo to rerun the build script when any of these change.
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=DEPLOY_TAG");
+}
+
+/// Run a command and return its trimmed stdout.
+///
+/// Falls back to `"unknown"` when the command fails to spawn,
+/// exits with a non-zero status, or produces empty output.
+/// Checking the exit status matters because a failing `git`,
+/// for example outside a repository, exits non-zero with empty stdout.
+fn command_output_or_unknown(program: &str, args: &[&str]) -> String {
+    Command::new(program)
+        .args(args)
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "unknown".to_string())
 }

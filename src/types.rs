@@ -1,156 +1,104 @@
-//! Types.
+//! Internal types.
 //!
-//! Type definitions for internal types and API configuration.
+//! Domain and runtime types that are shared across modules
+//! but are not part of the HTTP schema surface.
 
-use std::env;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::ops::RangeInclusive;
 
-use anyhow::{Context, anyhow};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use chrono::{DateTime, Utc};
-use dashmap::DashMap;
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 use tracing::level_filters::LevelFilter;
 use utoipa::ToSchema;
 
-use crate::schemas::AuthErrorResponse;
-use crate::telemetry::Telemetry;
+use crate::errors::{ApiError, ItemError};
+use crate::logging::log_warn;
+use crate::state::SharedState;
 
-// Thread-safe pointer to app state
-pub type SharedState = Arc<AppState>;
+/// Accepted range for item ids.
+pub const ITEM_ID_RANGE: RangeInclusive<u64> = 1000..=9999;
 
-// This should be stored for example in AWS Secrets Manager or similar,
-// for environment-specific API keys
-pub const DEFAULT_API_KEY: &str = "axum-api-key";
+/// Header carrying the admin API key.
+pub const API_KEY_HEADER: &str = "api-key";
 
 /// Logging level CLI parameter.
-#[derive(clap::ValueEnum, Clone, Debug, Default)]
+#[derive(clap::ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LogLevel {
+    /// Most verbose level.
     Trace,
+    /// Debug diagnostics.
     Debug,
+    /// Normal operational messages.
     #[default]
     Info,
+    /// Recoverable problems.
     Warn,
+    /// Failures only.
     Error,
 }
 
-/// Runtime environment enum.
-#[derive(Debug, Default, PartialEq, Eq, Serialize, Deserialize, EnumString, Display)]
+/// Runtime environment.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, EnumString, Display)]
 #[strum(serialize_all = "UPPERCASE", ascii_case_insensitive)]
 pub enum Environment {
+    /// Production deployment, with documentation routes hidden.
     Production,
+    /// Shared test deployment.
     Test,
+    /// Shared development deployment.
     Development,
+    /// Local developer machine.
     #[default]
     Local,
 }
 
-/// Shared state that simulates a database
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AppState {
-    pub db: DashMap<String, Item>,
-    #[serde(skip, default = "Instant::now")]
-    start_time: Instant,
-    start_time_utc: DateTime<Utc>,
-    #[serde(skip)]
-    pub(crate) telemetry: Telemetry,
-}
-
-/// API config for passing settings to routes.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Config {
-    pub api_key: String,
-    pub env: Environment,
-}
-
-/// Item information
+/// Item stored in the in-memory database.
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 pub struct Item {
-    #[schema(example = "1234")]
+    /// Item id between 1000 and 9999.
+    #[schema(example = 1234)]
     pub id: u64,
+    /// Unique item name.
     #[schema(example = "esgrove")]
     pub name: String,
 }
 
-/// Custom extractor for checking api key.
-///
-/// Note: requires the Config extension to be present in the route as well,
-/// so the correct api key can be accessed.
+/// Extractor that rejects requests without a valid `api-key` header.
+#[derive(Debug, Clone, Copy)]
 pub struct ApiKeyExtractor;
 
-impl AppState {
-    #[allow(unused)]
-    pub fn new() -> Self {
-        Self::new_with_telemetry(Telemetry::noop())
-    }
-
-    pub fn new_with_telemetry(telemetry: Telemetry) -> Self {
-        Self {
-            db: DashMap::with_capacity(8192),
-            start_time: Instant::now(),
-            start_time_utc: Utc::now(),
-            telemetry,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn new_shared_state() -> SharedState {
-        Arc::new(Self::new())
-    }
-
-    pub fn new_shared_state_from_env() -> anyhow::Result<SharedState> {
-        Ok(Arc::new(Self::new_with_telemetry(Telemetry::from_env()?)))
-    }
-
-    pub fn uptime(&self) -> Duration {
-        self.start_time.elapsed()
-    }
-
-    pub const fn start_time_utc(&self) -> DateTime<Utc> {
-        self.start_time_utc
-    }
-
-    pub const fn telemetry(&self) -> &Telemetry {
-        &self.telemetry
-    }
-
-    #[allow(unused)]
-    /// Serialize to pretty json.
-    pub fn to_json_pretty(&self) -> anyhow::Result<String> {
-        serde_json::to_string_pretty(self).context("Failed to serialize state")
-    }
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Item {
-    /// Try to create new Item with given name and id.
-    /// Returns Err if id is not valid.
-    pub fn new(name: String, id: u64) -> anyhow::Result<Self> {
-        if (1000..=10000).contains(&id) {
+    /// Create an item with a client-supplied id.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ItemError::InvalidId`] when `id` is outside [`ITEM_ID_RANGE`].
+    pub fn new(name: String, id: u64) -> Result<Self, ItemError> {
+        if ITEM_ID_RANGE.contains(&id) {
             Ok(Self { id, name })
         } else {
-            Err(anyhow!("ID must be between 1000 and 9999"))
+            Err(ItemError::InvalidId {
+                id,
+                min: *ITEM_ID_RANGE.start(),
+                max: *ITEM_ID_RANGE.end(),
+            })
         }
     }
 
+    /// Create an item with a random id inside [`ITEM_ID_RANGE`].
+    #[must_use]
     pub fn new_with_random_id(name: String) -> Self {
-        let id: u64 = rand::rng().random_range(1000..=9999);
+        let id: u64 = rand::rng().random_range(ITEM_ID_RANGE);
         Self { id, name }
     }
 }
 
 impl LogLevel {
-    /// Convert CLI log level to tracing log level filter
-    pub const fn to_filter(&self) -> LevelFilter {
+    /// Convert the CLI log level to a tracing level filter.
+    #[must_use]
+    pub const fn to_filter(self) -> LevelFilter {
         match self {
             Self::Trace => LevelFilter::TRACE,
             Self::Debug => LevelFilter::DEBUG,
@@ -161,61 +109,31 @@ impl LogLevel {
     }
 }
 
-impl Config {
-    #[allow(unused)]
-    pub const fn new(api_key: String, env: Environment) -> Self {
-        Self { api_key, env }
-    }
-
-    /// Try to get values from env variables or otherwise use defaults.
-    pub fn new_from_env() -> Self {
-        Self {
-            api_key: env::var("API_KEY").unwrap_or_else(|_| DEFAULT_API_KEY.to_string()),
-            env: Environment::from_env(),
-        }
-    }
-}
-
 impl Environment {
-    /// Try to read runtime environment from env variable or otherwise use default.
-    pub fn from_env() -> Self {
-        env::var("API_ENV").map_or_else(|_| Self::default(), |value| value.parse().unwrap_or_default())
+    /// Return `true` for local development.
+    #[must_use]
+    pub const fn is_local(self) -> bool {
+        matches!(self, Self::Local)
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            api_key: DEFAULT_API_KEY.to_string(),
-            env: Environment::default(),
-        }
-    }
-}
+#[expect(
+    clippy::unused_async_trait_impl,
+    reason = "the header check is synchronous, but `async fn` keeps the extractor readable"
+)]
+impl FromRequestParts<SharedState> for ApiKeyExtractor {
+    type Rejection = ApiError;
 
-/// This implements a custom Axum extractor for checking the api key in routes.
-/// `FromRequestParts` is used here since this does not need access to the request body.
-/// We only need to check the request headers for the api key.
-impl<S> FromRequestParts<S> for ApiKeyExtractor
-where
-    S: Send + Sync,
-{
-    type Rejection = AuthErrorResponse;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let config = parts
-            .extensions
-            .get::<Arc<Config>>()
-            .ok_or_else(|| AuthErrorResponse::new_from_str("Config extension missing from route"))?;
-
-        match parts.headers.get("api-key").and_then(|key| key.to_str().ok()) {
-            Some(api_key) if api_key == config.api_key => Ok(Self),
-            Some(api_key) => {
-                crate::log_warn!("Invalid API key: {} {}", parts.method.as_str(), parts.uri.path());
-                Err(AuthErrorResponse::new(format!("Invalid API key: '{api_key}'")))
+    async fn from_request_parts(parts: &mut Parts, state: &SharedState) -> Result<Self, Self::Rejection> {
+        match parts.headers.get(API_KEY_HEADER).and_then(|key| key.to_str().ok()) {
+            Some(api_key) if api_key == state.config.api_key => Ok(Self),
+            Some(_) => {
+                log_warn!("Invalid API key: {} {}", parts.method.as_str(), parts.uri.path());
+                Err(ApiError::Unauthorized("Invalid API key".to_string()))
             }
             None => {
-                crate::log_warn!("Missing API key header: {} {}", parts.method.as_str(), parts.uri.path());
-                Err(AuthErrorResponse::new_from_str("Missing api-key header"))
+                log_warn!("Missing API key header: {} {}", parts.method.as_str(), parts.uri.path());
+                Err(ApiError::Unauthorized(format!("Missing {API_KEY_HEADER} header")))
             }
         }
     }
@@ -227,29 +145,24 @@ mod tests {
 
     use axum::RequestPartsExt;
     use axum::http::Request;
-    use axum::response::IntoResponse;
-    use http_body_util::BodyExt;
+
+    use crate::config::Config;
+    use crate::state::AppState;
 
     #[test]
-    fn environment_round_trips_through_strum() {
+    fn environment_round_trips_and_parses_case_insensitively() {
         for variant in [
             Environment::Development,
             Environment::Local,
             Environment::Production,
             Environment::Test,
         ] {
-            let rendered = variant.to_string();
-            let parsed: Environment = rendered.parse().expect("environment should parse");
+            let parsed: Environment = variant.to_string().parse().expect("environment should parse");
             assert_eq!(parsed, variant);
         }
-    }
-
-    #[test]
-    fn environment_parses_case_insensitively() {
         assert_eq!("production".parse::<Environment>().unwrap(), Environment::Production);
-        assert_eq!("Local".parse::<Environment>().unwrap(), Environment::Local);
-        assert_eq!("DEVELOPMENT".parse::<Environment>().unwrap(), Environment::Development);
         assert!("not-real".parse::<Environment>().is_err());
+        assert!(Environment::Local.is_local());
     }
 
     #[test]
@@ -262,87 +175,30 @@ mod tests {
     }
 
     #[test]
-    fn config_default_uses_local_environment_and_default_key() {
-        let config = Config::default();
-
-        assert_eq!(config.api_key, DEFAULT_API_KEY);
-        assert_eq!(config.env, Environment::Local);
-    }
-
-    #[test]
-    fn item_constructor_accepts_valid_ids_and_rejects_out_of_range_ids() {
-        let item = Item::new("valid".to_string(), 1000).expect("lower bound should be valid");
-        assert_eq!(item.name, "valid");
-        assert_eq!(item.id, 1000);
-
-        let item = Item::new("valid".to_string(), 10_000).expect("upper bound should be valid");
-        assert_eq!(item.id, 10_000);
-
-        let error = Item::new("invalid".to_string(), 999).expect_err("low id should fail");
-        assert!(error.to_string().contains("ID must be between 1000 and 9999"));
-
-        let error = Item::new("invalid".to_string(), 10_001).expect_err("high id should fail");
-        assert!(error.to_string().contains("ID must be between 1000 and 9999"));
-    }
-
-    #[test]
-    fn app_state_serializes_database_without_runtime_fields() {
-        let state = AppState::new();
-        state.db.insert(
-            "stored".to_string(),
-            Item {
-                id: 4321,
-                name: "stored".to_string(),
-            },
-        );
-
-        let json = state.to_json_pretty().expect("state should serialize");
-
-        assert!(json.contains("stored"));
-        assert!(json.contains("start_time_utc"));
-        assert!(!json.contains("telemetry"));
+    fn item_constructor_validates_id_range() {
+        assert_eq!(Item::new("valid".into(), 1000).unwrap().id, 1000);
+        assert_eq!(Item::new("valid".into(), 9999).unwrap().id, 9999);
+        assert!(Item::new("invalid".into(), 999).is_err());
+        assert!(Item::new("invalid".into(), 10_000).is_err());
+        assert!(ITEM_ID_RANGE.contains(&Item::new_with_random_id("random".into()).id));
     }
 
     #[tokio::test]
-    async fn api_key_extractor_accepts_valid_key() {
-        let config = Arc::new(Config::default());
-        let request = Request::builder()
-            .uri("/admin/clear_items")
-            .header("api-key", &config.api_key)
-            .body(())
-            .expect("request should build");
-        let (mut parts, ()) = request.into_parts();
-        parts.extensions.insert(config);
+    async fn api_key_extractor_accepts_valid_key_and_rejects_others() {
+        let state = AppState::new_shared(Config::default());
 
-        let extracted = parts
-            .extract::<ApiKeyExtractor>()
-            .await
-            .expect("valid api key should extract");
-
-        assert!(matches!(extracted, ApiKeyExtractor));
-    }
-
-    #[tokio::test]
-    async fn api_key_extractor_rejects_missing_config_extension() {
-        let request = Request::builder()
-            .uri("/admin/clear_items")
-            .header("api-key", DEFAULT_API_KEY)
-            .body(())
-            .expect("request should build");
-        let (mut parts, ()) = request.into_parts();
-
-        let Err(rejection) = parts.extract::<ApiKeyExtractor>().await else {
-            panic!("missing config extension should reject");
-        };
-        let response = rejection.into_response();
-        let body = response
-            .into_body()
-            .collect()
-            .await
-            .expect("body should collect")
-            .to_bytes();
-        let body: serde_json::Value = serde_json::from_slice(&body).expect("body should be json");
-
-        assert_eq!(body["message"], "Config extension missing from route");
+        for (header, accepted) in [
+            (Some(state.config.api_key.as_str()), true),
+            (Some("wrong"), false),
+            (None, false),
+        ] {
+            let mut builder = Request::builder().uri("/admin/clear_items");
+            if let Some(value) = header {
+                builder = builder.header(API_KEY_HEADER, value);
+            }
+            let (mut parts, ()) = builder.body(()).expect("request").into_parts();
+            let result = parts.extract_with_state::<ApiKeyExtractor, _>(&state).await;
+            assert_eq!(result.is_ok(), accepted, "header {header:?}");
+        }
     }
 }
